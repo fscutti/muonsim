@@ -17,11 +17,14 @@ class Detector:
         # will be used to draw a muon ray. It is computed using the maximal
         # detector dimensions.
         self._elements = {}
+        self._elements_labels = {}
+
         _max_x, _max_y, _max_z = 0, 0, 0
         _min_x, _min_y, _min_z = 1e9, 1e9, 1e9
 
         for e, coord in self.elements.items():
             self._elements[e] = pv.Box(bounds=(*coord["x"], *coord["y"], *coord["z"]))
+            self._elements_labels[e] = coord["center"]
 
             _max_x, _min_x = max(_max_x, *coord["x"]), min(_min_x, *coord["x"])
             _max_y, _min_y = max(_max_y, *coord["y"]), min(_min_y, *coord["y"])
@@ -37,6 +40,9 @@ class Detector:
         self.pv_volume = pv.Box(
             bounds=(*self.volume["x"], *self.volume["y"], *self.volume["z"])
         )
+
+        self._labels = pv.PolyData([ec for e, ec in self._elements_labels.items()])
+        self._labels["Detector labels"] = [e for e in self._elements_labels]
 
         # The class can hold a bunch of muons (different events) at a time.
         self._muons = []
@@ -81,7 +87,10 @@ class Detector:
     def _find_muon_endpoints(self, muon_theta, muon_phi, muon_origin):
         """Finds the intersection between a muon and the planes
         defining the boundary volume of the detector."""
+
+        # These are the muon intersections.
         muon_endpoints = []
+        # This is the number of intersections with the boundary planes.
         muon_coincidences = 0
 
         dimensions = np.array(["x", "y", "z"])
@@ -136,7 +145,9 @@ class Detector:
 
         return muon_endpoints, muon_coincidences
 
-    def intersect(self, muon_theta, muon_phi, muon_origin, coincidences=[2]):
+    def intersect(
+        self, muon_theta, muon_phi, muon_origin, coincidences=[2], event_modules=[]
+    ):
         """Performs the intersection between a muon and the active
         volume of the detector."""
 
@@ -155,6 +166,11 @@ class Detector:
 
             for element_name, element_obj in self._elements.items():
                 muon_points, muon_ind = element_obj.ray_trace(muon_start, muon_stop)
+
+                # Selecting coincidences of specific modules.
+                if event_modules:
+                    if not element_name in event_modules:
+                        continue
 
                 # These are numpy arrays.
                 self._event_points[element_name] = muon_points
@@ -201,6 +217,10 @@ class Detector:
                     color="b",
                     lighting=True,
                     label=f"{element_name}",
+                )
+                # Plotting the elements labels.
+                _plot.add_point_labels(
+                    self._labels, "Detector labels", point_size=2, font_size=20
                 )
 
         # Adding all muons loaded into memory.

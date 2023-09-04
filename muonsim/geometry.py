@@ -3,8 +3,8 @@ import numpy as np
 from itertools import product
 
 sensor_side = 3.0
-#n_sensors = 5
-n_sensors = 1
+# n_sensors = 5
+n_sensors = 5
 sensors_spacing = 0.4
 
 n_panels = 2
@@ -49,5 +49,6 @@ for idx, (x, y, z) in enumerate(sensor_centers):
     block_detector[f"{layer}{sensor_id}"].update(
         {"z": [z - sensor_side / 2.0, z + sensor_side / 2.0]}
     )
+    block_detector[f"{layer}{sensor_id}"].update({"center": [x, y, z]})
 
 # EOF
