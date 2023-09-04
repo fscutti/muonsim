@@ -151,31 +151,42 @@ class Detector:
         """Performs the intersection between a muon and the active
         volume of the detector."""
 
+        self._event_points, self._event_intersections = {}, {}
+
         muon_endpoints, muon_coincidences = self._find_muon_endpoints(
             muon_theta, muon_phi, muon_origin
         )
-        self._event_points, self._event_intersections = {}, {}
 
-        # If the muon satisfies the coincidence criterion
-        # it is added to the cache. Its endpoints will be
-        # used for raytracing.
+        # If the muon satisfies the coincidence criterion and the modules intersection
+        # it is added to the cache. Its endpoints will be used for raytracing.
         if muon_endpoints and (muon_coincidences in coincidences):
             muon_start, muon_stop = muon_endpoints
 
+            points, intersections = self._element_intersect(muon_start, muon_stop)
+
+            if event_modules:
+                if not set(event_modules) == set(points):
+                    return
+
             self._muons.append(pv.Line(muon_start, muon_stop))
+            self._event_points, self._event_intersections = points, intersections
 
-            for element_name, element_obj in self._elements.items():
-                muon_points, muon_ind = element_obj.ray_trace(muon_start, muon_stop)
+    def _element_intersect(self, muon_start, muon_stop):
+        """Performs intersections with detector elements."""
 
-                # Selecting coincidences of specific modules.
-                if event_modules:
-                    if not element_name in event_modules:
-                        continue
+        event_points, event_intersections = {}, {}
 
+        for element_name, element_obj in self._elements.items():
+            # Selecting coincidences of specific modules.
+            muon_points, muon_ind = element_obj.ray_trace(muon_start, muon_stop)
+
+            if len(muon_points) > 0:
                 # These are numpy arrays.
-                self._event_points[element_name] = muon_points
+                event_points[element_name] = muon_points
                 # These are pyvista data structures.
-                self._event_intersections[element_name] = pv.PolyData(muon_points)
+                event_intersections[element_name] = pv.PolyData(muon_points)
+
+        return event_points, event_intersections
 
     def get_event_points(self):
         """Get latest event valid intersection points."""

@@ -22,8 +22,8 @@ np.random.seed(42)
 # Initial guess for the sample and number of MCMC samples
 initial_sample_guess = np.array([0.9, 100])
 proposal_std = [0.01, 10]
-# num_samples = 10_000_000
-num_samples = 100
+num_samples = 5_123_456
+#num_samples = 100000
 burning = int(num_samples * 0.01)
 flux_model = muonflux.sea_level
 
@@ -34,7 +34,7 @@ detector = Detector(geo.block_detector)
 # Maximum amount of muons in memory.
 clear_muons = 5000
 # Require coincidence of these specific modules.
-event_modules = ["T0", "B0"]
+event_modules = ["T12", "B12"]
 coincidences = [2]
 
 # -------------------------------
@@ -45,8 +45,6 @@ file_name = f"MuonSim_{num_samples}_{geo.n_sensors}x{geo.n_sensors}.root"
 
 def muon_loop(muons, detector, clear_muons=1000):
     """Loop over generated muons."""
-
-    # Preparing histograms for path lengths.
 
     for m_idx, m in tqdm(enumerate(muons), total=len(muons), colour="red"):
         cos_theta, energy = m
@@ -69,10 +67,6 @@ def muon_loop(muons, detector, clear_muons=1000):
         )
         muon_z = max(detector.volume["z"])
 
-        # print(muon_x, muon_y, muon_z)
-        # print()
-        # muon_z = 0.0
-
         muon_origin = np.array([muon_x, muon_y, muon_z])
 
         # This is loading the muon event into memory.
@@ -88,10 +82,8 @@ def muon_loop(muons, detector, clear_muons=1000):
         total_path_length = 0
         top_path_length = 0
         bottom_path_length = 0
-
-        # Looping over all intersected events.
-        # WARNING: only looping over these events is consistent
-        # with the coincidence requirement previously applied.
+        
+        # Filling histograms for individual elements.
         for element, points in event_points.items():
             if not len(points) == 2:
                 # Will need to handle this in a more sensible way.
@@ -113,9 +105,10 @@ def muon_loop(muons, detector, clear_muons=1000):
 
             elif element.startswith("B"):
                 bottom_path_length += path
-
-            hist.energy.Fill(energy)
-            hist.cos_theta.Fill(cos_theta)
+        
+        # Filling histograms for all generated muons.
+        hist.energy.Fill(energy)
+        hist.cos_theta.Fill(cos_theta)
 
         hist.total_path_length.Fill(total_path_length)
         hist.top_path_length.Fill(top_path_length)
