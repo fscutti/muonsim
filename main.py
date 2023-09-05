@@ -22,8 +22,8 @@ np.random.seed(42)
 # Initial guess for the sample and number of MCMC samples
 initial_sample_guess = np.array([0.9, 100])
 proposal_std = [0.01, 10]
-num_samples = 5_123_456
-#num_samples = 100000
+num_samples = 5_000_000
+#num_samples = 1000000
 burning = int(num_samples * 0.01)
 flux_model = muonflux.sea_level
 
@@ -32,15 +32,16 @@ flux_model = muonflux.sea_level
 # -------------------------------
 detector = Detector(geo.block_detector)
 # Maximum amount of muons in memory.
-clear_muons = 5000
+clear_muons = 500
 # Require coincidence of these specific modules.
-event_modules = ["T12", "B12"]
+#event_modules = ["T12", "B12"]
+event_modules = []
 coincidences = [2]
 
 # -------------------------------
 # Setting up plotting
 # -------------------------------
-file_name = f"MuonSim_{num_samples}_{geo.n_sensors}x{geo.n_sensors}.root"
+file_name = f"MuonSim_{num_samples}_{geo.n_sensors}x{geo.n_sensors}_all_sensors.root"
 
 
 def muon_loop(muons, detector, clear_muons=1000):
@@ -50,7 +51,7 @@ def muon_loop(muons, detector, clear_muons=1000):
         cos_theta, energy = m
 
         if m_idx % clear_muons == 0:
-            detector.clear_muons()
+            detector.clear_muons(clear_muons)
 
         # Here units are in degrees.
         muon_theta = 180.0 * math.acos(cos_theta) / np.pi

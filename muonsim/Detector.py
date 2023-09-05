@@ -170,6 +170,7 @@ class Detector:
 
             self._muons.append(pv.Line(muon_start, muon_stop))
             self._event_points, self._event_intersections = points, intersections
+            # print("Adding muons", event_modules, points, self._muons)
 
     def _element_intersect(self, muon_start, muon_stop):
         """Performs intersections with detector elements."""
@@ -197,9 +198,10 @@ class Detector:
 
         return event_points
 
-    def clear_muons(self):
+    def clear_muons(self, max_muons):
         """Clears all loaded muons."""
-        self._muons = []
+        if len(self._muons) > max_muons:
+            self._muons = []
 
     def plot(
         self, add_volume=True, add_elements=True, add_muons=True, add_intersections=True
