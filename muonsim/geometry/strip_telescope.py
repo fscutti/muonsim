@@ -10,7 +10,7 @@ n_sensors = 5
 sensors_spacing = 0.04
 layers_gap = 0.2
 
-panels_gap = 10.0
+panels_gap = 100.0
 
 step = sensor_side + sensors_spacing
 panel_side = (n_sensors - 1) * step

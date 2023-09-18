@@ -22,8 +22,8 @@ np.random.seed(42)
 # Initial guess for the sample and number of MCMC samples
 initial_sample_guess = np.array([0.9, 100])
 proposal_std = [0.01, 10]
-#num_samples = 5_000_000
-num_samples = 1000000
+num_samples = 5_000_000
+#num_samples = 10000
 burning = int(num_samples * 0.01)
 flux_model = muonflux.sea_level
 
@@ -43,7 +43,7 @@ coincidences = [2]
 # -------------------------------
 # Setting up plotting
 # -------------------------------
-file_name = f"MuonSim_{num_samples}_{geo.block_telescope.n_sensors}x{geo.block_telescope.n_sensors}_all_sensors.root"
+file_name = f"MuonSimTest_{num_samples}_{geo.block_telescope.n_sensors}x{geo.block_telescope.n_sensors}_all_sensors.root"
 
 
 def muon_loop(muons, detector, clear_muons=1000):
@@ -58,16 +58,10 @@ def muon_loop(muons, detector, clear_muons=1000):
         # Here units are in degrees.
         muon_theta = 180.0 * math.acos(cos_theta) / np.pi
         muon_phi = np.random.uniform(0.0, 360.0)
-
+        
         # Generating the muon on the top panel.
-        # muon_x = np.random.uniform(*detector.volume["x"])
-        # muon_y = np.random.uniform(*detector.volume["y"])
-        muon_x = np.random.uniform(
-            2 * detector.volume["x"][0], 2 * detector.volume["x"][1]
-        )
-        muon_y = np.random.uniform(
-            2 * detector.volume["y"][0], 2 * detector.volume["y"][1]
-        )
+        muon_x = np.random.uniform(*detector.volume["x"])
+        muon_y = np.random.uniform(*detector.volume["y"])
         muon_z = max(detector.volume["z"])
 
         muon_origin = np.array([muon_x, muon_y, muon_z])
@@ -91,17 +85,9 @@ def muon_loop(muons, detector, clear_muons=1000):
         
         # Filling histograms for individual elements.
         for element, points in event_points.items():
-            if not len(points) == 2:
-                # Will need to handle this in a more sensible way.
-                wrn_msg = (
-                    f"WARNING: Element {element} has {len(points)} intersections: "
-                )
-                wrn_msg += f" {points}. Ignoring it for now..."
-                print(wrn_msg)
-
-                continue
 
             start, stop = points
+
             path = np.linalg.norm(start - stop)
             total_path_length += path
             hist.path_length[element].Fill(path)
@@ -124,7 +110,7 @@ def muon_loop(muons, detector, clear_muons=1000):
 def make_plots(detector, file_name):
     """Plotting. It includes displaying the detector and muon rays."""
 
-    detector.plot(add_elements=True, add_muons=True, add_intersections=True)
+    detector.plot(add_elements=True, add_muons=True, add_intersections=True, add_connections=False)
 
     out_file = R.TFile.Open(file_name, "RECREATE")
 
@@ -142,8 +128,7 @@ def make_plots(detector, file_name):
 
 if __name__ == "__main__":
 
-    detector.plot(True, True, True, False, False)
-    sys.exit()
+    #detector.plot(True, True, True, False, False)
 
     # -------------------------------
     # Running Metropolis-Hastings
@@ -151,7 +136,6 @@ if __name__ == "__main__":
     muons = mcmc.metropolis_hastings(
         flux_model, initial_sample_guess, num_samples, proposal_std, burning
     )
-    
 
     print("Size of muons array:", sys.getsizeof(muons))
     print("Size of muons array (nbytes):", muons.nbytes)

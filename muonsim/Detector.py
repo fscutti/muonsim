@@ -35,10 +35,16 @@ class Detector:
             _max_y, _min_y = max(_max_y, *coord["y"]), min(_min_y, *coord["y"])
             _max_z, _min_z = max(_max_z, *coord["z"]), min(_min_z, *coord["z"])
 
+        # This expansion factor is needed to make sure that all elements are
+        # comfortably contained within the detector volume such that the
+        # element intersections with the generated muons
+        # (at the edge of the volume) are meaningful.
+        _expansion_factor = 1.01
+
         self.volume = {
-            "x": [_max_x, _min_x],
-            "y": [_max_y, _min_y],
-            "z": [_max_z, _min_z],
+            "x": [_expansion_factor * _max_x, _expansion_factor * _min_x],
+            "y": [_expansion_factor * _max_y, _expansion_factor * _min_y],
+            "z": [_expansion_factor * _max_z, _expansion_factor * _min_z],
         }
 
         # This is used for drawing the volume of the detector.
@@ -58,6 +64,13 @@ class Detector:
         # * _event_intersections for eventual pyvista plotting.
         self._event_points = None
         self._event_intersections = None
+
+        # This dictionary is used to collect all those elements intersections
+        # which have a number of intersections different than two. This should
+        # never happen and in these cases we are interested in plotting these
+        # bad events.
+        self._bad_event_points = []
+        self._bad_event_intersections = []
 
     def _plane_intersection(
         self, plane_normal, plane_point, muon_direction, muon_point
@@ -151,7 +164,7 @@ class Detector:
         return muon_endpoints, muon_coincidences
 
     def reset_event(self):
-        """Resets the event information."""
+        """Resets the event information. Notice that the bad points are never reset."""
         self._event_points, self._event_intersections = {}, {}
 
     def intersect(
@@ -169,32 +182,59 @@ class Detector:
         if muon_endpoints and (muon_coincidences in coincidences):
             muon_start, muon_stop = muon_endpoints
 
-            points, intersections = self._element_intersect(muon_start, muon_stop)
+            (
+                points,
+                intersections,
+                bad_points,
+                bad_intersections,
+            ) = self._element_intersect(muon_start, muon_stop)
 
             if event_modules:
                 if not set(event_modules) == set(points):
                     return
 
             self._muons.append(pv.Line(muon_start, muon_stop))
+
             self._event_points, self._event_intersections = points, intersections
-            # print("Adding muons", event_modules, points, self._muons)
+
+            if bad_points:
+                self._bad_event_points.append(bad_points)
+                self._bad_event_intersections.append(bad_intersections)
 
     def _element_intersect(self, muon_start, muon_stop):
         """Performs intersections with detector elements."""
 
         event_points, event_intersections = {}, {}
+        bad_event_points, bad_event_intersections = {}, {}
+
+        # print("----------------------")
+        # print(f"Start: {muon_start}")
+        # print(f"Stop: {muon_stop}")
+        # print("----------------------")
 
         for element_name, element_obj in self._elements.items():
             # Selecting coincidences of specific modules.
             muon_points, muon_ind = element_obj.ray_trace(muon_start, muon_stop)
 
             if len(muon_points) > 0:
-                # These are numpy arrays.
-                event_points[element_name] = muon_points
-                # These are pyvista data structures.
-                event_intersections[element_name] = pv.PolyData(muon_points)
+                if len(muon_points) == 2:
+                    # These are numpy arrays.
+                    event_points[element_name] = muon_points
+                    # These are pyvista data structures.
+                    event_intersections[element_name] = pv.PolyData(muon_points)
 
-        return event_points, event_intersections
+                elif len(muon_points) == 1:
+                    bad_event_points[element_name] = muon_points
+                    bad_event_intersections[element_name] = pv.PolyData(muon_points)
+
+        # print(len(event_points), len(bad_event_points))
+
+        return (
+            event_points,
+            event_intersections,
+            bad_event_points,
+            bad_event_intersections,
+        )
 
     def get_event_points(self):
         """Get latest event valid intersection points."""
@@ -252,28 +292,49 @@ class Detector:
             # Displaying relevant relations b/w detector components.
             for connection_name, connection_obj in self._elements_connections.items():
                 _plot.add_mesh(
-                    connection_obj, color="green", line_width=1, label="Connections"
+                    connection_obj, color="green", line_width=0.5, label="Connections"
                 )
 
         # Adding all muons loaded into memory.
         if add_muons:
             print(f"Detector plot: adding {len(self._muons)} muons")
+
             for m in self._muons:
                 _plot.add_mesh(m, color="red", line_width=1, label="Muon")
 
         # Adding intersection points for the latest event.
         if add_intersections:
             print(f"Detector intersection: adding {len(self._muons)} muons")
-            print(f"Event intersections {self._event_intersections}")
+            print(f"Available event intersections {self._event_intersections}")
+
             for element_name, element_intersection in self._event_intersections.items():
                 print(f"Adding latest event intersection with {element_name}:")
+
                 if not self._event_points[element_name].size == 0:
                     print(f"    {element_intersection}")
                     _plot.add_mesh(
                         element_intersection,
-                        color="yellow",
+                        color="green",
                         point_size=8,
                         label="Intersection",
+                    )
+
+            print(
+                f"Printing {len(self._bad_event_intersections)} bad event intersections"
+            )
+            for bad_intersection in self._bad_event_intersections:
+                # print(f"Adding bad event intersection with {element_name}:")
+
+                for (
+                    bad_element_name,
+                    bad_element_intersection,
+                ) in bad_intersection.items():
+                    # print(f"    {bad_element_intersection}")
+                    _plot.add_mesh(
+                        bad_element_intersection,
+                        color="yellow",
+                        point_size=8,
+                        label="Bad intersection",
                     )
 
         _plot.show()
