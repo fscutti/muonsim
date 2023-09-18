@@ -9,8 +9,9 @@ from itertools import product
 
 
 class Detector:
-    def __init__(self, elements):
+    def __init__(self, elements, connections=None):
         self.elements = elements
+        self.connections = connections
 
         # The _elements attribute represents the active pyvista volumes
         # of the detector. The detector is inserted in a volume which
@@ -18,6 +19,10 @@ class Detector:
         # detector dimensions.
         self._elements = {}
         self._elements_labels = {}
+
+        self._elements_connections = {}
+        for c, extrema in self.connections.items():
+            self._elements_connections[c] = pv.Line(*extrema)
 
         _max_x, _max_y, _max_z = 0, 0, 0
         _min_x, _min_y, _min_z = 1e9, 1e9, 1e9
@@ -145,13 +150,15 @@ class Detector:
 
         return muon_endpoints, muon_coincidences
 
+    def reset_event(self):
+        """Resets the event information."""
+        self._event_points, self._event_intersections = {}, {}
+
     def intersect(
         self, muon_theta, muon_phi, muon_origin, coincidences=[2], event_modules=[]
     ):
         """Performs the intersection between a muon and the active
         volume of the detector."""
-
-        self._event_points, self._event_intersections = {}, {}
 
         muon_endpoints, muon_coincidences = self._find_muon_endpoints(
             muon_theta, muon_phi, muon_origin
@@ -204,7 +211,12 @@ class Detector:
             self._muons = []
 
     def plot(
-        self, add_volume=True, add_elements=True, add_muons=True, add_intersections=True
+        self,
+        add_volume=True,
+        add_elements=True,
+        add_connections=True,
+        add_muons=True,
+        add_intersections=True,
     ):
         """Every time this function is called, it plots what explicitly requested."""
         _plot = pv.Plotter(off_screen=False)
@@ -236,15 +248,27 @@ class Detector:
                     self._labels, "Detector labels", point_size=2, font_size=20
                 )
 
+        if add_connections:
+            # Displaying relevant relations b/w detector components.
+            for connection_name, connection_obj in self._elements_connections.items():
+                _plot.add_mesh(
+                    connection_obj, color="green", line_width=1, label="Connections"
+                )
+
         # Adding all muons loaded into memory.
         if add_muons:
+            print(f"Detector plot: adding {len(self._muons)} muons")
             for m in self._muons:
                 _plot.add_mesh(m, color="red", line_width=1, label="Muon")
 
         # Adding intersection points for the latest event.
         if add_intersections:
+            print(f"Detector intersection: adding {len(self._muons)} muons")
+            print(f"Event intersections {self._event_intersections}")
             for element_name, element_intersection in self._event_intersections.items():
+                print(f"Adding latest event intersection with {element_name}:")
                 if not self._event_points[element_name].size == 0:
+                    print(f"    {element_intersection}")
                     _plot.add_mesh(
                         element_intersection,
                         color="yellow",

@@ -1,6 +1,11 @@
 import ROOT as R
 from muonsim import geometry as geo
 
+# -----------------------------------------------
+# This is the only piece of configuration needed.
+# -----------------------------------------------
+detector = geo.block_telescope.detector
+
 # Muon energy.
 energy = R.TH1F("h_energy", "Muon Energy", 1000, 0, 1000)
 energy.SetTitle("Muon Energy")
@@ -14,7 +19,7 @@ cos_theta.GetYaxis().SetTitle("Entries")
 
 # Path length in detector submodule.
 path_length = {}
-for element in geo.block_detector:
+for element in detector:
     path_length[element] = R.TH1F(
         f"h_{element}_path_length", f"h_{element}_path_length", 1000, 0, 10
     )

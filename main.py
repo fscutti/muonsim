@@ -22,17 +22,19 @@ np.random.seed(42)
 # Initial guess for the sample and number of MCMC samples
 initial_sample_guess = np.array([0.9, 100])
 proposal_std = [0.01, 10]
-num_samples = 5_000_000
-#num_samples = 1000000
+#num_samples = 5_000_000
+num_samples = 1000000
 burning = int(num_samples * 0.01)
 flux_model = muonflux.sea_level
 
 # -------------------------------
 # Setting up muon loop
 # -------------------------------
-detector = Detector(geo.block_detector)
+#detector = Detector(geo.block_telescope.detector)
+detector = Detector(geo.strip_telescope.detector, geo.strip_telescope.connections)
+
 # Maximum amount of muons in memory.
-clear_muons = 500
+clear_muons = 1000
 # Require coincidence of these specific modules.
 #event_modules = ["T12", "B12"]
 event_modules = []
@@ -41,7 +43,7 @@ coincidences = [2]
 # -------------------------------
 # Setting up plotting
 # -------------------------------
-file_name = f"MuonSim_{num_samples}_{geo.n_sensors}x{geo.n_sensors}_all_sensors.root"
+file_name = f"MuonSim_{num_samples}_{geo.block_telescope.n_sensors}x{geo.block_telescope.n_sensors}_all_sensors.root"
 
 
 def muon_loop(muons, detector, clear_muons=1000):
@@ -69,6 +71,9 @@ def muon_loop(muons, detector, clear_muons=1000):
         muon_z = max(detector.volume["z"])
 
         muon_origin = np.array([muon_x, muon_y, muon_z])
+        
+        # Clearing all event-related data structures.
+        detector.reset_event()
 
         # This is loading the muon event into memory.
         detector.intersect(
@@ -114,7 +119,7 @@ def muon_loop(muons, detector, clear_muons=1000):
         hist.total_path_length.Fill(total_path_length)
         hist.top_path_length.Fill(top_path_length)
         hist.bottom_path_length.Fill(bottom_path_length)
-
+    
 
 def make_plots(detector, file_name):
     """Plotting. It includes displaying the detector and muon rays."""
@@ -136,12 +141,20 @@ def make_plots(detector, file_name):
 
 
 if __name__ == "__main__":
+
+    detector.plot(True, True, True, False, False)
+    sys.exit()
+
     # -------------------------------
     # Running Metropolis-Hastings
     # -------------------------------
     muons = mcmc.metropolis_hastings(
         flux_model, initial_sample_guess, num_samples, proposal_std, burning
     )
+    
+
+    print("Size of muons array:", sys.getsizeof(muons))
+    print("Size of muons array (nbytes):", muons.nbytes)
 
     # -------------------------------
     # Running muon loop

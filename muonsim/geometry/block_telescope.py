@@ -3,9 +3,8 @@ import numpy as np
 from itertools import product
 
 sensor_side = 3.0
-# n_sensors = 5
 n_sensors = 5
-sensors_spacing = 0.4
+sensors_spacing = 0.04
 
 n_panels = 2
 panels_gap = 33.0
@@ -26,8 +25,6 @@ z_low = (panels_gap + sensor_side) / 2.0
 z_high = -(panels_gap + sensor_side) / 2.0
 z_coord = np.array([z_low, z_high])
 
-# sensor_centers = list(product(x_coord, y_coord, z_coord))
-
 # This will order the tuple a bit better.
 sensor_centers = []
 for z in z_coord:
@@ -35,20 +32,20 @@ for z in z_coord:
         for x in x_coord:
             sensor_centers.append((x, y, z))
 
-block_detector = {}
+detector = {}
 for idx, (x, y, z) in enumerate(sensor_centers):
     sensor_id = idx % (n_sensors * n_sensors)
     layer = "T" if z > 0 else "B"
 
-    block_detector[f"{layer}{sensor_id}"] = {
+    detector[f"{layer}{sensor_id}"] = {
         "x": [x - sensor_side / 2.0, x + sensor_side / 2.0]
     }
-    block_detector[f"{layer}{sensor_id}"].update(
+    detector[f"{layer}{sensor_id}"].update(
         {"y": [y - sensor_side / 2.0, y + sensor_side / 2.0]}
     )
-    block_detector[f"{layer}{sensor_id}"].update(
+    detector[f"{layer}{sensor_id}"].update(
         {"z": [z - sensor_side / 2.0, z + sensor_side / 2.0]}
     )
-    block_detector[f"{layer}{sensor_id}"].update({"center": [x, y, z]})
+    detector[f"{layer}{sensor_id}"].update({"center": [x, y, z]})
 
 # EOF
