@@ -230,7 +230,7 @@ class Detector:
         if len(event_points) == 0:
             # If event_points is empty, the muon is within the volume but the volume
             # might be too large for the muon to intersect any active element.
-            print("WARNING: event points should be not empty at this point.")
+            print("WARNING: event points should not be empty at this point.")
 
         return (
             event_points,
@@ -249,7 +249,16 @@ class Detector:
 
     def get_event_reconstruction(self):
         """Get reconstructed muon endpoints."""
-        return self._event_points
+
+        current_event_combination = set(self._event_points)
+
+        for c, extrema in self.connections.items():
+            reconstructed_combination = set(c.split("_"))
+
+            if reconstructed_combination.issubset(current_event_combination):
+                return extrema
+
+        # sys.exit(f"ERROR: {current_event_combination}")
 
     def clear_muons(self, max_muons):
         """Clears all loaded muons."""

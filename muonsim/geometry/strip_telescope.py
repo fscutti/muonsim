@@ -81,7 +81,7 @@ for upper_sensor in ["TU1", "TU2", "TU3", "TU4", "TU5"]:
 # Bottom panel.
 _bottom_intersections = {}
 for upper_sensor in ["BU1", "BU2", "BU3", "BU4", "BU5"]:
-    for lower_sensor in ["BL1", "BL2", "BL3", "TL4", "BL5"]:
+    for lower_sensor in ["BL1", "BL2", "BL3", "BL4", "BL5"]:
         min_x = max(detector[upper_sensor]["x"][0], detector[lower_sensor]["x"][0])
         max_x = min(detector[upper_sensor]["x"][1], detector[lower_sensor]["x"][1])
 

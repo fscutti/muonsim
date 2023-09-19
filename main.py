@@ -22,8 +22,8 @@ np.random.seed(42)
 # Initial guess for the sample and number of MCMC samples
 initial_sample_guess = np.array([0.9, 100])
 proposal_std = [0.01, 10]
-# num_samples = 5_000_000
-num_samples = 1000000
+num_samples = 5_000_000
+# num_samples = 1000000
 burning = int(num_samples * 0.01)
 flux_model = muonflux.sea_level
 
@@ -79,13 +79,14 @@ def muon_loop(muons, detector, clear_muons=1000):
         )
 
         event_points = detector.get_event_points()
+        event_reconstruction = detector.get_event_reconstruction()
 
         total_path_length = 0
         top_path_length = 0
         bottom_path_length = 0
 
         # if the event satisfies all our selection criteria.
-        if event_points:
+        if event_points and event_reconstruction:
             # Filling histograms for individual elements.
             for element, points in event_points.items():
                 start, stop = points
