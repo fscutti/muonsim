@@ -37,9 +37,9 @@ class Detector:
 
         # This expansion factor is needed to make sure that all elements are
         # comfortably contained within the detector volume such that the
-        # element intersections with the generated muons
-        # (at the edge of the volume) are meaningful.
-        _expansion_factor = 1.01
+        # element intersections with the generated muons, at the edge of the
+        # volume, are meaningful. It should not be too large or too small.
+        _expansion_factor = 1.001
 
         self.volume = {
             "x": [_expansion_factor * _max_x, _expansion_factor * _min_x],
@@ -227,7 +227,10 @@ class Detector:
                     bad_event_points[element_name] = muon_points
                     bad_event_intersections[element_name] = pv.PolyData(muon_points)
 
-        # print(len(event_points), len(bad_event_points))
+        if len(event_points) == 0:
+            # If event_points is empty, the muon is within the volume but the volume
+            # might be too large for the muon to intersect any active element.
+            print("WARNING: event points should be not empty at this point.")
 
         return (
             event_points,
@@ -238,12 +241,15 @@ class Detector:
 
     def get_event_points(self):
         """Get latest event valid intersection points."""
-        event_points = {}
-        for element_name, element_points in self._event_points.items():
-            if not element_points.size == 0:
-                event_points[element_name] = element_points
+        # WARNING: many times this dictionary will be empty. These are cases
+        # where the generated muon does not satisfy our selection criteria
+        # e.g. coincidences. It is up to the main selection to remove these
+        # points.
+        return self._event_points
 
-        return event_points
+    def get_event_reconstruction(self):
+        """Get reconstructed muon endpoints."""
+        return self._event_points
 
     def clear_muons(self, max_muons):
         """Clears all loaded muons."""
