@@ -88,7 +88,7 @@ class Detector:
         return w + si * muon_direction + plane_point
 
     def _versor(self, theta, phi):
-        """Returns a versor corresponding to a set of polar coordinates.
+        """Returns a numpy versor corresponding to a set of polar coordinates.
         Input units are expected to be in degrees."""
         # theta = 90.0 - elevation
         theta = theta * np.pi / 180.0
@@ -101,6 +101,19 @@ class Detector:
         v = np.array([x, y, z])
 
         return v / np.linalg.norm(v)
+
+    def _polar(self, start, stop):
+        """Returns polar coordinates corresponding to 3D vector in degrees.
+        The input are two numpy vectors."""
+        x, y, z = np.subtract(start, stop)
+
+        theta = 180.0 * math.acos(z / math.sqrt(x**2 + y**2 + z**2)) / np.pi
+        phi = 180.0 * math.atan2(x, y) / np.pi
+
+        if phi < 0.0:
+            phi += 360.0
+
+        return theta, phi
 
     def _find_muon_endpoints(self, muon_theta, muon_phi, muon_origin):
         """Finds the intersection between a muon and the planes
@@ -239,7 +252,7 @@ class Detector:
             bad_event_intersections,
         )
 
-    def get_event_points(self):
+    def get_element_intersections(self):
         """Get latest event valid intersection points."""
         # WARNING: many times this dictionary will be empty. These are cases
         # where the generated muon does not satisfy our selection criteria
@@ -256,7 +269,9 @@ class Detector:
             reconstructed_combination = set(c.split("_"))
 
             if reconstructed_combination.issubset(current_event_combination):
-                return extrema
+                # return extrema
+                start, stop = extrema
+                return self._polar(np.array(start), np.array(stop))
 
         # sys.exit(f"ERROR: {current_event_combination}")
 
