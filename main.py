@@ -43,9 +43,9 @@ detector = Detector(geo.strip_telescope.detector, geo.strip_telescope.connection
 # Maximum amount of muons in memory.
 clear_muons = 1000
 # Require coincidence of these specific modules.
-# event_modules = ["T12", "B12"]
-event_modules = []
-coincidences = [2]
+# required_modules = ["T12", "B12"]
+required_modules = []
+required_coincidences = [2]
 
 # -------------------------------
 # Setting up plotting
@@ -97,8 +97,8 @@ def muon_loop(muons, detector, clear_muons=1000):
             muon_true_theta,
             muon_true_phi,
             muon_true_origin,
-            coincidences=coincidences,
-            event_modules=event_modules,
+            required_coincidences=required_coincidences,
+            required_modules=required_modules,
         )
 
         # Reconstruct the muon trajectory.

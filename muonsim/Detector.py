@@ -143,7 +143,9 @@ class Detector:
         self._muon_hits, self._muon_intersections = {}, {}
         self._true_muon, self._reconstructed_muon = None, None
 
-    def intersect(self, muon_theta, muon_phi, muon_origin, coincidences, event_modules):
+    def intersect(
+        self, muon_theta, muon_phi, muon_origin, required_coincidences, required_modules
+    ):
         """Performs the intersection between a muon and the active
         volume of the detector."""
 
@@ -153,7 +155,7 @@ class Detector:
 
         # If the muon satisfies the coincidence criterion and the modules intersection
         # it is added to the cache. Its endpoints will be used for raytracing.
-        if muon_endpoints and (muon_coincidences in coincidences):
+        if muon_endpoints and (muon_coincidences in required_coincidences):
             muon_start, muon_stop = muon_endpoints
 
             (
@@ -163,11 +165,10 @@ class Detector:
                 bad_intersections,
             ) = self._element_intersect(muon_start, muon_stop)
 
-            if event_modules:
-                if not set(event_modules) == set(hits):
+            if required_modules:
+                if not set(required_modules) == set(hits):
                     return False
 
-            # self._muons.append(pv.Line(muon_start, muon_stop))
             self._muons.append([muon_start, muon_stop])
 
             self._muon_hits, self._muon_intersections = hits, intersections
