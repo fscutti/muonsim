@@ -18,6 +18,8 @@ def save_canvases(input_file, output_directory, output_file=None, save_eps=False
 
     canvases = {}
 
+    R.gStyle.SetNumberContours(99)
+
     for _obj in objects:
         obj_name = _obj.GetName()
 
@@ -34,7 +36,11 @@ def save_canvases(input_file, output_directory, output_file=None, save_eps=False
 
         obj.SetLineWidth(3)
         obj.SetLineColor(R.kRed)
-        obj.Draw()
+
+        if "p2" in obj_name or "h2" in obj_name:
+            obj.Draw("colz")
+        else:
+            obj.Draw()
 
         # canvases[obj_name].SetOptStat(0)
 

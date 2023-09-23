@@ -1,6 +1,7 @@
 """This module contains all functions needed to define the muon flux.
 The formula is taken from https://arxiv.org/abs/1509.06176v1."""
 import numpy as np
+import math
 
 
 def _charge_fraction(charge):
@@ -42,14 +43,17 @@ def _flux_gccly(cos_theta, kinetic_energy, charge):
     """This function provides the Guan et al. parametrization of the sea level flux."""
     # Since this function might be needed for MC generation, we will need to
     # discard unphysical values by hand.
-    if kinetic_energy < 0 or abs(cos_theta) > 1:
-        return 0
+
+    ## Added. The flux is zero for unphysical parameters.
+    if kinetic_energy < 0 or abs(cos_theta) > 1 or cos_theta < 0:
+        return 0.0
 
     Emu = kinetic_energy + 0.10566
     cs = _cos_theta_star(cos_theta)
 
-    if cs == 0:
-        return 0
+    ## Previsouly added.
+    # if cs == 0:
+    #    return 0
 
     return pow(1 + 3.64 / (Emu * pow(cs, 1.29)), -2.7) * flux_gaisser(
         cs, kinetic_energy, charge
@@ -59,4 +63,18 @@ def _flux_gccly(cos_theta, kinetic_energy, charge):
 def sea_level(sample):
     """Muon flux at sea level."""
     charge = 1 if np.random.uniform(0, 1) > 0.5 else -1
+    # return _flux_gccly(sample, 10e-4,  charge)
     return _flux_gccly(*sample, charge)
+
+
+def flat(sample):
+    """Flat flux."""
+    cos_theta, energy = sample
+
+    if abs(cos_theta) > 1 or cos_theta < 0:
+        return 0.0
+
+    if energy < 0 or energy > 100:
+        return 0.0
+
+    return 1.0
