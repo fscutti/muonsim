@@ -2,6 +2,17 @@ import numpy as np
 from tqdm import tqdm
 
 
+def uniform(num_samples, parameters):
+    """Uniform distribution."""
+    samples = []
+    for idx in range(num_samples):
+        s = []
+        for _, p_range in parameters.items():
+            s.append(np.random.uniform(*p_range))
+        samples.append(s)
+    return np.array(samples)
+
+
 def metropolis_hastings(likelihood, initial_sample, num_samples, proposal_std, burning):
     """Metropolis-Hastings MCMC algorithm for 2D mean."""
 

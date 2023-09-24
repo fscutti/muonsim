@@ -64,7 +64,10 @@ def sea_level(sample):
     """Muon flux at sea level."""
     charge = 1 if np.random.uniform(0, 1) > 0.5 else -1
     # return _flux_gccly(sample, 10e-4,  charge)
-    return _flux_gccly(*sample, charge)
+    theta, energy = sample
+    cos_theta = np.cos(np.radians(theta))
+
+    return _flux_gccly(cos_theta, energy, charge)
 
 
 def flat(sample):

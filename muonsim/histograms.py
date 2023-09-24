@@ -39,6 +39,13 @@ true_vs_reco_phi.GetXaxis().SetTitle("#phi_{true} [deg]")
 true_vs_reco_phi.GetYaxis().SetTitle("#phi_{reco} [deg]")
 true_vs_reco_phi.GetZaxis().SetTitle("Entries")
 
+# Angular acceptance.
+prof2d_ang_acc = R.TProfile2D(
+    "p2_ang_acc", "angular acceptance", 100, 0, 15, 100, 0, 360, 0, 2
+)
+prof2d_ang_acc.GetXaxis().SetTitle("#theta_{true} [deg]")
+prof2d_ang_acc.GetYaxis().SetTitle("#phi_{true} [deg]")
+prof2d_ang_acc.GetZaxis().SetTitle("N(Reco) / N(Total)")
 
 # Angular distance between reconstructed and true muon.
 prof2d_ang_dist = R.TProfile2D(
