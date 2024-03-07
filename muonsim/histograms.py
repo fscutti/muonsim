@@ -3,17 +3,17 @@ from muonsim import geometry as geo
 
 # Muon energy.
 energy = R.TH1F("h_energy", "Muon Energy", 1000, 0, 1000)
-energy.SetTitle("Muon Energy")
+energy.SetTitle("Generated muon Energy")
 energy.GetXaxis().SetTitle("Muon energy [GeV]")
 energy.GetYaxis().SetTitle("Entries")
 
 # Cosine of the zenith angle.
-cos_theta = R.TH1F("h_cos_theta", "cos(theta)", 1000, 0, 1)
+cos_theta = R.TH1F("h_cos_theta", "generated cos(theta)", 1000, 0, 1)
 cos_theta.GetXaxis().SetTitle("cos(#theta)")
 cos_theta.GetYaxis().SetTitle("Entries")
 
 # True zenith angle.
-true_theta = R.TH1F("h_true_theta", "true theta", 200, 0, 90)
+true_theta = R.TH1F("h_true_theta", "generated true theta", 200, 0, 90)
 true_theta.GetXaxis().SetTitle("#theta_{true} [deg]")
 true_theta.GetYaxis().SetTitle("Entries")
 
@@ -25,7 +25,7 @@ reco_theta.GetYaxis().SetTitle("Entries")
 
 # True vs reconstructed zenith angle.
 true_vs_reco_theta = R.TH2F(
-    "h2_true_vs_reco_theta", "reco vs true theta", 100, 0, 15, 100, 0, 15
+    "h2_true_vs_reco_theta", "reco vs true theta", 500, 0, 50, 500, 0, 50
 )
 true_vs_reco_theta.GetXaxis().SetTitle("#theta_{true} [deg]")
 true_vs_reco_theta.GetYaxis().SetTitle("#theta_{reco} [deg]")
@@ -39,25 +39,77 @@ true_vs_reco_phi.GetXaxis().SetTitle("#phi_{true} [deg]")
 true_vs_reco_phi.GetYaxis().SetTitle("#phi_{reco} [deg]")
 true_vs_reco_phi.GetZaxis().SetTitle("Entries")
 
-# Angular acceptance.
-prof2d_ang_acc = R.TProfile2D(
-    "p2_ang_acc", "angular acceptance", 100, 0, 15, 100, 0, 360, 0, 2
+# Angular acceptance vs true angles.
+prof2d_ang_acc_vs_true = R.TProfile2D(
+    "p2_ang_acc_vs_true",
+    "angular acceptance vs true angles",
+    500,
+    0,
+    50,
+    100,
+    0,
+    360,
+    0,
+    2,
 )
-prof2d_ang_acc.GetXaxis().SetTitle("#theta_{true} [deg]")
-prof2d_ang_acc.GetYaxis().SetTitle("#phi_{true} [deg]")
-prof2d_ang_acc.GetZaxis().SetTitle("N(Reco) / N(Total)")
+prof2d_ang_acc_vs_true.GetXaxis().SetTitle("#theta_{true} [deg]")
+prof2d_ang_acc_vs_true.GetYaxis().SetTitle("#phi_{true} [deg]")
+prof2d_ang_acc_vs_true.GetZaxis().SetTitle("N(Reco) / N(Total)")
 
-# Angular distance between reconstructed and true muon.
-prof2d_ang_dist = R.TProfile2D(
-    "p2_ang_dist", "reco vs true angular distance", 100, 0, 15, 100, 0, 360, 0, 20
+# Angular acceptance vs reconstructed angles.
+prof2d_ang_acc_vs_reco = R.TProfile2D(
+    "p2_ang_acc_vs_reco",
+    "angular acceptance vs reconstructed angles",
+    500,
+    0,
+    50,
+    100,
+    0,
+    360,
+    0,
+    2,
 )
-prof2d_ang_dist.GetXaxis().SetTitle("#theta_{true} [deg]")
-prof2d_ang_dist.GetYaxis().SetTitle("#phi_{true} [deg]")
-prof2d_ang_dist.GetZaxis().SetTitle("#Delta#Omega(reco - true) [deg]")
+prof2d_ang_acc_vs_reco.GetXaxis().SetTitle("#theta_{reco} [deg]")
+prof2d_ang_acc_vs_reco.GetYaxis().SetTitle("#phi_{reco} [deg]")
+prof2d_ang_acc_vs_reco.GetZaxis().SetTitle("N(Reco) / N(Total)")
+
+# Angular distance between reconstructed and true muon as a function of the true angles.
+prof2d_ang_dist_vs_true = R.TProfile2D(
+    "p2_ang_dist_vs_true",
+    "reco - true angular distance vs true angles",
+    500,
+    0,
+    50,
+    100,
+    0,
+    360,
+    0,
+    20,
+)
+prof2d_ang_dist_vs_true.GetXaxis().SetTitle("#theta_{true} [deg]")
+prof2d_ang_dist_vs_true.GetYaxis().SetTitle("#phi_{true} [deg]")
+prof2d_ang_dist_vs_true.GetZaxis().SetTitle("#Delta#Omega(reco - true) [deg]")
+
+# Angular distance between reconstructed and true muon as a function of the reconstructed angles.
+prof2d_ang_dist_vs_reco = R.TProfile2D(
+    "p2_ang_dist_vs_reco",
+    "reco - true angular distance vs reconstructed angles",
+    500,
+    0,
+    50,
+    100,
+    0,
+    360,
+    0,
+    20,
+)
+prof2d_ang_dist_vs_reco.GetXaxis().SetTitle("#theta_{reco} [deg]")
+prof2d_ang_dist_vs_reco.GetYaxis().SetTitle("#phi_{reco} [deg]")
+prof2d_ang_dist_vs_reco.GetZaxis().SetTitle("#Delta#Omega(reco - true) [deg]")
 
 # True vs reconstructed zenith angle as a profile histogram.
 prof_true_vs_reco_theta = R.TProfile(
-    "p_true_vs_reco_theta", "reco vs true theta", 100, 0, 15, 0, 15
+    "p_true_vs_reco_theta", "reco vs true theta", 500, 0, 50, 0, 50
 )
 prof_true_vs_reco_theta.GetXaxis().SetTitle("#theta_{true} [deg]")
 prof_true_vs_reco_theta.GetYaxis().SetTitle("#theta_{reco} [deg]")
@@ -71,7 +123,7 @@ prof_true_vs_reco_phi.GetYaxis().SetTitle("#phi_{reco} [deg]")
 
 # Theta relative resolution.
 prof_theta_rel_resolution = R.TProfile(
-    "p_theta_rel_resolution", "reco theta relative resolution", 100, 0, 15, 0, 15
+    "p_theta_rel_resolution", "reco theta relative resolution", 500, 0, 50, 0, 50
 )
 prof_theta_rel_resolution.GetXaxis().SetTitle("#theta_{true} [deg]")
 prof_theta_rel_resolution.GetYaxis().SetTitle(
@@ -88,7 +140,7 @@ prof_phi_rel_resolution.GetYaxis().SetTitle("|#phi_{true} - #phi_{reco}| / #phi_
 
 # Theta resolution.
 prof_theta_resolution = R.TProfile(
-    "p_theta_resolution", "reco theta resolution", 100, 0, 15, -15, 15
+    "p_theta_resolution", "reco theta resolution", 500, 0, 50, -50, 50
 )
 prof_theta_resolution.GetXaxis().SetTitle("#theta_{true} [deg]")
 prof_theta_resolution.GetYaxis().SetTitle("#theta_{true} - #theta_{reco} [deg]")

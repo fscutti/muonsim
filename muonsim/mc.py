@@ -13,7 +13,7 @@ def uniform(num_samples, parameters):
     return np.array(samples)
 
 
-def metropolis_hastings(likelihood, initial_sample, num_samples, proposal_std, burning):
+def metropolis_hastings(num_samples, likelihood, initial_sample, proposal_std, burning):
     """Metropolis-Hastings MCMC algorithm for 2D mean."""
 
     samples = []

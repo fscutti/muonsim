@@ -2,6 +2,8 @@
 import numpy as np
 from itertools import product
 
+name = "Block"
+
 sensor_side = 3.0
 n_sensors = 5
 sensors_spacing = 0.04

@@ -10,7 +10,7 @@ from muonsim import utils
 
 
 class Detector:
-    def __init__(self, elements, connections=None):
+    def __init__(self, elements, connections):
         self.elements = elements
         self.connections = connections
 
@@ -85,7 +85,7 @@ class Detector:
         # These are the muon intersections.
         muon_endpoints = []
         # This is the number of intersections with the boundary planes.
-        muon_coincidences = 0
+        muon_boundary_coincidences = 0
 
         normal = {
             "x": np.array([1.0, 0.0, 0.0]),
@@ -121,7 +121,7 @@ class Detector:
                 # sensitive area of the detector The algorithm needs to find
                 # at least one of these points.
                 if is_within_x and is_within_y:
-                    muon_coincidences += 1
+                    muon_boundary_coincidences += 1
 
                 # This list includes intersections outside the sensitive area
                 # of the detector. We might still be interested in those but
@@ -136,7 +136,7 @@ class Detector:
             err_msg += f" Check volume {self.volume} for elements {self.elements}.\n"
             sys.exit(err_msg)
 
-        return muon_endpoints, muon_coincidences
+        return muon_endpoints, muon_boundary_coincidences
 
     def reset_event(self):
         """Resets the event information. Notice that the bad hits are never reset."""
@@ -144,18 +144,25 @@ class Detector:
         self._true_muon, self._reconstructed_muon = None, None
 
     def intersect(
-        self, muon_theta, muon_phi, muon_origin, required_coincidences, required_modules
+        self,
+        muon_theta,
+        muon_phi,
+        muon_origin,
+        required_boundary_coincidences,
+        required_modules,
     ):
         """Performs the intersection between a muon and the active
         volume of the detector."""
 
-        muon_endpoints, muon_coincidences = self._find_muon_endpoints(
+        muon_endpoints, muon_boundary_coincidences = self._find_muon_endpoints(
             muon_theta, muon_phi, muon_origin
         )
 
         # If the muon satisfies the coincidence criterion and the modules intersection
         # it is added to the cache. Its endpoints will be used for raytracing.
-        if muon_endpoints and (muon_coincidences in required_coincidences):
+        if muon_endpoints and (
+            muon_boundary_coincidences in required_boundary_coincidences
+        ):
             muon_start, muon_stop = muon_endpoints
 
             (
@@ -303,7 +310,7 @@ class Detector:
             for c_idx, (ss, st) in enumerate(zip(start, stop)):
                 line = pv.Line(ss, st)
                 _plot.add_mesh(
-                    line, color=_colors[c_idx], line_width=0.5, label="Connections"
+                    line, color=_colors[c_idx], line_width=6.0, label="Connections"
                 )
 
         if add_connections:
@@ -319,7 +326,7 @@ class Detector:
 
             for m in self._muons:
                 _m = pv.Line(*m)
-                _plot.add_mesh(_m, color="red", line_width=1, label="Muon")
+                _plot.add_mesh(_m, color="red", line_width=1.0, label="Muon")
 
         # Adding intersection points for the latest event.
         if add_intersections:

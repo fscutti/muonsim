@@ -23,8 +23,8 @@ if __name__ == "__main__":
 
     for i, zi in enumerate(zenith[:-1]):
         dz = zenith[i + 1] - zi
-        zz = np.linspace(zi, zenith[i + 1], 101)
 
+        zz = np.linspace(zi, zenith[i + 1], 101)
         ff = np.array([flux_GCCLY(energy + 0.5, zzz) for zzz in zz])
 
         model[i] = np.trapz(ff, zz) / dz

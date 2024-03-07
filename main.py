@@ -16,26 +16,27 @@ from muonsim import plotter
 from muonsim.Detector import Detector
 
 LIVE_MODE = False
-
-# -------------------------------
-# Setting up Metropolis-Hastings
-# -------------------------------
-# If MCMC has to be used then MUONS should be an empty list.
 # NUM_SAMPLES = 5_000_000
-NUM_SAMPLES = 100000
+NUM_SAMPLES = 10000
 USE_MUON_FLUX = False
 MIN_PHI, MAX_PHI = 0.0, 360.0
+np.random.seed(42)
 
 if USE_MUON_FLUX:
-    np.random.seed(42)
-    # Initial guess for the sample and number of MCMC samples
+    # -------------------------------
+    # Setting up Metropolis-Hastings
+    # -------------------------------
+    # Initial guess for the sample and number of MCMC samples.
     INITIAL_SAMPLE_GUESS = np.array([1.0, 1.0])
     PROPOSAL_STD = [0.01, 0.5]
     BURNING = int(NUM_SAMPLES * 0.30)
     FLUX_MODEL = muonflux.sea_level
 else:
+    # -------------------------------
+    # Setting up uniform generation
+    # -------------------------------
     # These parameters are only used for the uniform distribution.
-    MIN_THETA, MAX_THETA = 0.0, 20.0
+    MIN_THETA, MAX_THETA = 0.0, 50.0
     MIN_ENERGY, MAX_ENERGY = 0.0, 1000.0
     RANGE = {
         "theta": [MIN_THETA, MAX_THETA],
@@ -45,39 +46,46 @@ else:
 # -------------------------------
 # Setting up muon loop
 # -------------------------------
-# detector = Detector(geo.block_telescope.detector)
-DETECTOR = Detector(geo.strip_telescope.detector, geo.strip_telescope.connections)
+# ... one always needs the connections ...
+# DETECTOR = Detector(geo.block_telescope.detector)
+# DETECTOR = Detector(geo.strip_telescope.detector, geo.strip_telescope.connections)
+DETECTOR = Detector(geo.sabre_telescope.detector, geo.sabre_telescope.connections)
 
 # Maximum amount of muons in memory.
 CLEAR_MUONS = 1000
 # Require coincidence of these specific modules.
 # required_modules = ["T12", "B12"]
-REQUIRED_MODULES = []
-REQUIRED_COINCIDENCES = [2]
+REQUIRED_MODULES = ["T", "M", "B"]
+# Require that the muon intersects a certain number
+# of upper and lower boundary planes. Eiher one or two.
+REQUIRED_BOUNDARY_COINCIDENCES = [2]
 
 # -------------------------------
 # Setting up plotting
 # -------------------------------
-FILE_NAME = f"MuonSimTest_{NUM_SAMPLES}_{geo.block_telescope.n_sensors}x{geo.block_telescope.n_sensors}_all_sensors.root"
+# FILE_NAME = f"CosterfieldEffMap_{NUM_SAMPLES}_{geo.strip_telescope.n_sensors}x{geo.strip_telescope.n_sensors}_{geo.strip_telescope.name}.root"
+# FILE_NAME = f"SABREFlux_{NUM_SAMPLES}_{geo.sabre_telescope.name}.root"
+FILE_NAME = f"Test_{NUM_SAMPLES}.root"
 OUTPUT_DIRECTORY = FILE_NAME.split(".")[0]
 
 
 def muon_loop(muons, detector, clear_muons=1000):
     """Loop over generated muons."""
-    for m_idx, muon in tqdm(enumerate(muons), total=len(muons), colour="red"):
+
+    n_gen_muons = len(muons)
+
+    for m_idx, muon in tqdm(enumerate(muons), total=n_gen_muons, colour="red"):
         if m_idx % clear_muons == 0:
             detector.clear_muons(clear_muons)
 
-        theta, energy = muon
-
-        # Geometrical properties of the true muon.
+        # Properties of the generated muon.
         # ----------------------------------------
         # Here units are in degrees.
-        muon_true_theta = theta
-        muon_true_phi = np.random.uniform(MIN_PHI, MAX_PHI)
+        gen_true_theta, gen_true_energy = muon
+        gen_true_phi = np.random.uniform(MIN_PHI, MAX_PHI)
 
         # Generating the muon on the top panel.
-        muon_true_origin = np.array(
+        gen_true_origin = np.array(
             [
                 np.random.uniform(*detector.volume["x"]),
                 np.random.uniform(*detector.volume["y"]),
@@ -90,17 +98,15 @@ def muon_loop(muons, detector, clear_muons=1000):
 
         # This is loading the muon event into memory.
         has_intersection = detector.intersect(
-            muon_true_theta,
-            muon_true_phi,
-            muon_true_origin,
-            required_coincidences=REQUIRED_COINCIDENCES,
+            gen_true_theta,
+            gen_true_phi,
+            gen_true_origin,
+            required_boundary_coincidences=REQUIRED_BOUNDARY_COINCIDENCES,
             required_modules=REQUIRED_MODULES,
         )
 
         # Reconstruct the muon trajectory.
         has_reconstruction = detector.reconstruct()
-
-        # print(has_reconstruction, has_intersection)
 
         if has_reconstruction:
             if not has_intersection:
@@ -176,12 +182,8 @@ def muon_loop(muons, detector, clear_muons=1000):
             if true_muon_theta > 0:
                 theta_rel_resolution = abs(theta_resolution) / true_muon_theta
 
-            # Filling 1D histograms for all generated muons.
+            # Filling 1D histograms for all recorded muons.
             # ----------------------------------------------
-
-            # Generated parameters.
-            hist.energy.Fill(energy)
-            hist.cos_theta.Fill(np.cos(np.pi * theta / 180.0))
 
             # Muon parameters true vs reco.
             hist.true_theta.Fill(true_muon_theta)
@@ -192,7 +194,7 @@ def muon_loop(muons, detector, clear_muons=1000):
             hist.top_path_length.Fill(top_path_length)
             hist.bottom_path_length.Fill(bottom_path_length)
 
-            # Filling 2D histograms for all generated muons.
+            # Filling 2D histograms for all recorded muons.
             # ----------------------------------------------
 
             # True vs reco histograms.
@@ -212,18 +214,36 @@ def muon_loop(muons, detector, clear_muons=1000):
             hist.prof_phi_rel_resolution.Fill(true_muon_phi, phi_rel_resolution)
 
             # Angular distance profile.
-            hist.prof2d_ang_dist.Fill(true_muon_theta, true_muon_phi, ang_dist)
+            hist.prof2d_ang_dist_vs_true.Fill(true_muon_theta, true_muon_phi, ang_dist)
+            hist.prof2d_ang_dist_vs_reco.Fill(reco_muon_theta, reco_muon_phi, ang_dist)
 
-        # Angular acceptance profile. Has to be filled outside the condition statement.
-        hist.prof2d_ang_acc.Fill(muon_true_theta, muon_true_phi, detector_acceptance)
+            hist.prof2d_ang_acc_vs_reco.Fill(
+                reco_muon_theta, reco_muon_phi, detector_acceptance / n_gen_muons
+            )
+
+        # Filling 1D histograms for all generated muons.
+        # ----------------------------------------------
+        # Generated parameters. To be filled outside the accepted muons loop.
+        hist.energy.Fill(gen_true_energy)
+        hist.cos_theta.Fill(np.cos(np.pi * gen_true_theta / 180.0))
+
+        # Filling 2D histograms for all generated muons.
+        # ----------------------------------------------
+        # Angular acceptance profile.
+        hist.prof2d_ang_acc_vs_true.Fill(
+            gen_true_theta, gen_true_phi, detector_acceptance
+        )
 
 
 def make_plots(detector, file_name, output_directory=None):
     """Plotting. It includes displaying the detector and muon rays."""
 
-    # detector.plot(
-    #    add_elements=True, add_muons=True, add_intersections=True, add_connections=False
-    # )
+    detector.plot(
+        add_elements=True,
+        add_muons=True,
+        add_intersections=False,
+        add_connections=False,
+    )
     out_dir = "./"
     if output_directory is not None:
         if not os.path.exists(output_directory):
@@ -266,8 +286,18 @@ def make_plots(detector, file_name, output_directory=None):
     )
     out_file.WriteObject(hist.prof_phi_resolution, hist.prof_phi_resolution.GetName())
 
-    out_file.WriteObject(hist.prof2d_ang_dist, hist.prof2d_ang_dist.GetName())
-    out_file.WriteObject(hist.prof2d_ang_acc, hist.prof2d_ang_acc.GetName())
+    out_file.WriteObject(
+        hist.prof2d_ang_dist_vs_true, hist.prof2d_ang_dist_vs_true.GetName()
+    )
+    out_file.WriteObject(
+        hist.prof2d_ang_dist_vs_reco, hist.prof2d_ang_dist_vs_reco.GetName()
+    )
+    out_file.WriteObject(
+        hist.prof2d_ang_acc_vs_true, hist.prof2d_ang_acc_vs_true.GetName()
+    )
+    out_file.WriteObject(
+        hist.prof2d_ang_acc_vs_reco, hist.prof2d_ang_acc_vs_reco.GetName()
+    )
 
     for element in detector.elements:
         out_file.WriteObject(
@@ -279,8 +309,6 @@ def make_plots(detector, file_name, output_directory=None):
 
 
 if __name__ == "__main__":
-    # detector.plot(True, True, True, False, False)
-
     # -------------------------------
     # Generating muons
     # -------------------------------
@@ -288,7 +316,7 @@ if __name__ == "__main__":
 
     if USE_MUON_FLUX:
         muons = mc.metropolis_hastings(
-            FLUX_MODEL, INITIAL_SAMPLE_GUESS, NUM_SAMPLES, PROPOSAL_STD, BURNING
+            NUM_SAMPLES, FLUX_MODEL, INITIAL_SAMPLE_GUESS, PROPOSAL_STD, BURNING
         )
     else:
         muons = mc.uniform(NUM_SAMPLES, RANGE)

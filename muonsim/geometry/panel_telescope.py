@@ -2,10 +2,10 @@
 import numpy as np
 from itertools import product
 
-name = "Strip"
+name = "Panel"
 
 sensor_side = 2.968
-sensor_length = 15.0
+sensor_length = 20.0
 sensor_height = 1.27
 
 n_sensors = 5
@@ -16,7 +16,7 @@ layers_gap = 0.2
 # panels_gap = 100.0
 
 # This is for a MOD
-panels_gap = 15.0
+panels_gap = 20.0
 
 step = sensor_side + sensors_spacing
 panel_side = (n_sensors - 1) * step
