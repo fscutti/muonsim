@@ -7,8 +7,16 @@ import numpy as np
 
 from copy import copy
 from random import uniform
+from scipy import stats
+from tqdm import tqdm
+
 from muonsim import geometry as geo
 from muonsim import utils
+
+import matplotlib.pyplot as plt
+import matplotlib.colors as colors
+
+import cmasher
 
 regions = geo.barmod_telescope_v2.regions
 
@@ -81,7 +89,7 @@ def make_mpl_plot(
 
     data = np.empty([n_az_bins, n_el_bins])
 
-    for g_idx, az_idx, el_idx in RU.bin_loop(hist):
+    for g_idx, az_idx, el_idx in utils.bin_loop(hist):
         data[az_idx - 1, el_idx - 1] = hist.GetBinContent(g_idx)
 
     az_min = hist.GetXaxis().GetXmin()
@@ -263,9 +271,13 @@ with open(os.path.join(path, file_name)) as file:
 h_acc_counts = get_acceptance_counts_hist(h_counts, os.path.join(path, acceptance_file))
 h_flux = get_flux_hist(h_acc_counts)
 
+h_flux.Print()
+
+plot_dir = "TestFlux"
+
 make_mpl_plot(
         h_flux,
-        savefig="TestFlux",
+        savefig=os.path.join(plot_dir, h_flux.GetName()),
         log_scale=False,
         title="Muon Flux",
         units="$\mathrm{N_{\mu}/[GeV\;x\;s\;x\;sr\;x\;m^{2}]}$",
