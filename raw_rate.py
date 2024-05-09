@@ -18,6 +18,7 @@ import matplotlib.colors as colors
 
 import cmasher
 
+# NOTE: this should be run with the pyrate environment.
 
 def find_tag(line, delimiter="   "):
     sensor_tag = ["A", "B", "C", "D", "E"]
@@ -244,58 +245,65 @@ regions = geo.barmod_telescope_v2.regions
 
 path = "/Users/fscutti/github/muonsim/data"
 
-file_name = "Mod2_119.log"
 acceptance_file = "AltCosterfieldEffMap_5000000_5x5_Strip.root"
 
-h_name = file_name.split(".")[0]
+files = [f for f in os.listdir(path) if f.endswith(".log")]
 
-h_counts = ROOT.TH2F(
-    f"h_counts_{h_name}", f"h_counts_{h_name}", 360, 0, 360, 45, 45, 90
-)
-acquisition_time_seconds = 0
+out_file = ROOT.TFile.Open(os.path.join(path, "Costefield_fluxes.root"), "RECREATE")
 
-with open(os.path.join(path, file_name)) as file:
-    for line in file:
-        if line.startswith("Total Blocks (Seconds):"):
-            acquisition_time_seconds = int(line.split(":")[1].replace(" ", ""))
+for file_name in files:
+    
+    h_name = file_name.split(".")[0]
+    
+    h_counts = ROOT.TH2F(
+        f"h_counts_{h_name}", f"h_counts_{h_name}", 360, 0, 360, 45, 45, 90
+    )
+    acquisition_time_seconds = 0
+    
+    with open(os.path.join(path, file_name)) as file:
+        for line in file:
+            if line.startswith("Total Blocks (Seconds):"):
+                acquisition_time_seconds = int(line.split(":")[1].replace(" ", ""))
+    
+            if "...." in line:
+                upper_panel, lower_panel = line.split("....")
+    
+                upper_panel_top_layer, upper_panel_lower_layer = upper_panel.split("|")
+                lower_panel_top_layer, lower_panel_lower_layer = lower_panel.split("|")
+    
+                uptl = find_tag(upper_panel_top_layer)
+                upll = find_tag(upper_panel_lower_layer)
+                lptl = find_tag(lower_panel_top_layer)
+                lpll = find_tag(lower_panel_lower_layer)
+    
+                region_name = f"Top_T{uptl}_Top_B{upll}_Bottom_T{lptl}_Bottom_B{lpll}"
+    
+                top_region, bottom_region = regions[region_name]
+    
+                top_hit = get_hit(*top_region)
+                bottom_hit = get_hit(*bottom_region)
+    
+                muon = top_hit - bottom_hit
+    
+                muon_elevation = 90.0 - get_zenith(*top_hit, *bottom_hit)
+                muon_azimuth = get_azimuth(*top_hit, *bottom_hit)
+    
+                h_counts.Fill(muon_azimuth, muon_elevation)
+    
+    h_acc_counts = get_acceptance_counts_hist(h_counts, os.path.join(path, acceptance_file))
+    h_acc_counts.Rebin2D(5, 5)
+    h_flux = get_flux_hist(h_acc_counts, time=acquisition_time_seconds)
+    h_flux.Print()
 
-        if "...." in line:
-            upper_panel, lower_panel = line.split("....")
-
-            upper_panel_top_layer, upper_panel_lower_layer = upper_panel.split("|")
-            lower_panel_top_layer, lower_panel_lower_layer = lower_panel.split("|")
-
-            uptl = find_tag(upper_panel_top_layer)
-            upll = find_tag(upper_panel_lower_layer)
-            lptl = find_tag(lower_panel_top_layer)
-            lpll = find_tag(lower_panel_lower_layer)
-
-            region_name = f"Top_T{uptl}_Top_B{upll}_Bottom_T{lptl}_Bottom_B{lpll}"
-
-            top_region, bottom_region = regions[region_name]
-
-            top_hit = get_hit(*top_region)
-            bottom_hit = get_hit(*bottom_region)
-
-            muon = top_hit - bottom_hit
-
-            muon_elevation = 90.0 - get_zenith(*top_hit, *bottom_hit)
-            muon_azimuth = get_azimuth(*top_hit, *bottom_hit)
-
-            h_counts.Fill(muon_azimuth, muon_elevation)
-
-h_acc_counts = get_acceptance_counts_hist(h_counts, os.path.join(path, acceptance_file))
-h_acc_counts.Rebin2D(5, 5)
-h_flux = get_flux_hist(h_acc_counts, time=acquisition_time_seconds)
-h_flux.Print()
-
-plot_dir = "TestFlux"
-make_mpl_plot(
-    h_flux,
-    cmap="cmr.ocean",
-    savefig=os.path.join(plot_dir, h_flux.GetName()),
-    log_scale=False,
-    draw_grid=True,
-    title="Measured Flux",
-    units="$\mathrm{N_{\mu}/[GeV\;x\;s\;x\;sr\;x\;m^{2}]}$",
-)
+    out_file.WriteObject(h_flux, h_flux.GetName())
+    
+    plot_dir = "TestFlux"
+    make_mpl_plot(
+        h_flux,
+        cmap="cmr.ocean",
+        savefig=os.path.join(plot_dir, h_flux.GetName()),
+        log_scale=False,
+        draw_grid=True,
+        title="Measured Flux",
+        units="$\mathrm{N_{\mu}/[GeV\;x\;s\;x\;sr\;x\;m^{2}]}$",
+    )
