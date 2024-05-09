@@ -240,27 +240,45 @@ def get_flux_hist(count_hist, time=1, surface=0.15 * 0.15):
 
     return flux_hist
 
-
+# -------------
+# Configuration
+# -------------
 regions = geo.barmod_telescope_v2.regions
 
-path = "/Users/fscutti/github/muonsim/data"
+
+path = "/Users/fscutti/github/muonsim"
+
+input_dir = os.path.join(path, "data")
+output_dir = os.path.join(path, "TestFlux")
+
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
 
 acceptance_file = "AltCosterfieldEffMap_5000000_5x5_Strip.root"
 
-files = [f for f in os.listdir(path) if f.endswith(".log")]
+files = [f for f in os.listdir(input_dir) if f.endswith(".log")]
 
-out_file = ROOT.TFile.Open(os.path.join(path, "Costefield_fluxes.root"), "RECREATE")
+out_file = ROOT.TFile.Open(os.path.join(output_dir, "Costerfield_fluxes.root"), "RECREATE")
 
+orientation = {}
+orientation["Mod5"] = 0.
+orientation["Mod2"] = 180.
+
+# -------------
+# Main loop
+# -------------
 for file_name in files:
     
     h_name = file_name.split(".")[0]
+
+    orientation_tag = h_name.split("_")[0]
     
     h_counts = ROOT.TH2F(
         f"h_counts_{h_name}", f"h_counts_{h_name}", 360, 0, 360, 45, 45, 90
     )
     acquisition_time_seconds = 0
     
-    with open(os.path.join(path, file_name)) as file:
+    with open(os.path.join(input_dir, file_name)) as file:
         for line in file:
             if line.startswith("Total Blocks (Seconds):"):
                 acquisition_time_seconds = int(line.split(":")[1].replace(" ", ""))
@@ -287,21 +305,21 @@ for file_name in files:
     
                 muon_elevation = 90.0 - get_zenith(*top_hit, *bottom_hit)
                 muon_azimuth = get_azimuth(*top_hit, *bottom_hit)
+                muon_azimuth = (muon_azimuth + orientation[orientation_tag]) % 360
     
                 h_counts.Fill(muon_azimuth, muon_elevation)
     
-    h_acc_counts = get_acceptance_counts_hist(h_counts, os.path.join(path, acceptance_file))
+    h_acc_counts = get_acceptance_counts_hist(h_counts, os.path.join(input_dir, acceptance_file))
     h_acc_counts.Rebin2D(5, 5)
     h_flux = get_flux_hist(h_acc_counts, time=acquisition_time_seconds)
     h_flux.Print()
 
     out_file.WriteObject(h_flux, h_flux.GetName())
     
-    plot_dir = "TestFlux"
     make_mpl_plot(
         h_flux,
         cmap="cmr.ocean",
-        savefig=os.path.join(plot_dir, h_flux.GetName()),
+        savefig=os.path.join(output_dir, h_flux.GetName()),
         log_scale=False,
         draw_grid=True,
         title="Measured Flux",
