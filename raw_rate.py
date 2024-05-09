@@ -2,7 +2,7 @@ import os
 import sys
 import math
 
-import ROOT 
+import ROOT
 import numpy as np
 
 from copy import copy
@@ -17,13 +17,6 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 
 import cmasher
-
-regions = geo.barmod_telescope_v2.regions
-
-path = "/Users/fscutti/github/muonsim/data"
-
-file_name = "Mod2_119.log"
-acceptance_file = "AltCosterfieldEffMap_5000000_5x5_Strip.root"
 
 
 def find_tag(line, delimiter="   "):
@@ -58,10 +51,6 @@ def get_azimuth(x1, y1, z1, x2, y2, z2):
     return phi
 
 
-h_name = file_name.split(".")[0]
-
-h_counts = ROOT.TH2F(f"h_flux_{h_name}", f"h_flux_{h_name}", 360, 0, 360, 90, 0, 90)
-
 def make_mpl_plot(
     hist,
     cmap="cmr.torch",
@@ -79,7 +68,7 @@ def make_mpl_plot(
 
     if flip:
         pass
-        #hist = copy(diabolical_flip(hist))
+        # hist = copy(diabolical_flip(hist))
 
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -171,8 +160,6 @@ def make_mpl_plot(
     # Else, simply show it
     else:
         plt.show()
-       
-
 
 
 def get_acceptance_counts_hist(counts_hist, file_path):
@@ -181,7 +168,10 @@ def get_acceptance_counts_hist(counts_hist, file_path):
 
     acc_counts_hist = copy(counts_hist)
     acc_counts_hist.Reset()
-    acc_counts_hist.SetNameTitle("h_acc_counts", "h_acc_counts")
+    acc_counts_hist.SetNameTitle(
+        counts_hist.GetName().replace("counts", "acc_counts"),
+        counts_hist.GetName().replace("counts", "acc_counts"),
+    )
 
     acceptance_file = ROOT.TFile.Open(file_path, "READ")
     acceptance_hist = acceptance_file.Get("p2_ang_acc_vs_true")
@@ -196,7 +186,13 @@ def get_acceptance_counts_hist(counts_hist, file_path):
         acceptance = acceptance_hist.GetBinContent(acc_g_idx)
 
         n_muons = counts_hist.GetBinContent(g_idx)
-        n_acc_muons = n_muons * acceptance
+
+        # Here we are dividing by the acceptance as we are correcting real data.
+
+        n_acc_muons = 0
+        if acceptance:
+            n_acc_muons = n_muons / acceptance
+
         acc_counts_hist.SetBinContent(g_idx, n_acc_muons)
         acc_counts_hist.SetBinError(g_idx, math.sqrt(n_acc_muons))
 
@@ -206,7 +202,10 @@ def get_acceptance_counts_hist(counts_hist, file_path):
 def get_flux_hist(count_hist, time=1, surface=0.15 * 0.15):
     flux_hist = copy(count_hist)
     flux_hist.Reset()
-    flux_hist.SetNameTitle("h_flux", "h_flux")
+    flux_hist.SetNameTitle(
+        count_hist.GetName().replace("counts", "flux"),
+        count_hist.GetName().replace("counts", "flux"),
+    )
 
     # Normalisation constants.
     deg = np.pi / 180.0
@@ -241,8 +240,25 @@ def get_flux_hist(count_hist, time=1, surface=0.15 * 0.15):
     return flux_hist
 
 
+regions = geo.barmod_telescope_v2.regions
+
+path = "/Users/fscutti/github/muonsim/data"
+
+file_name = "Mod2_119.log"
+acceptance_file = "AltCosterfieldEffMap_5000000_5x5_Strip.root"
+
+h_name = file_name.split(".")[0]
+
+h_counts = ROOT.TH2F(
+    f"h_counts_{h_name}", f"h_counts_{h_name}", 360, 0, 360, 45, 45, 90
+)
+acquisition_time_seconds = 0
+
 with open(os.path.join(path, file_name)) as file:
     for line in file:
+        if line.startswith("Total Blocks (Seconds):"):
+            acquisition_time_seconds = int(line.split(":")[1].replace(" ", ""))
+
         if "...." in line:
             upper_panel, lower_panel = line.split("....")
 
@@ -269,34 +285,17 @@ with open(os.path.join(path, file_name)) as file:
             h_counts.Fill(muon_azimuth, muon_elevation)
 
 h_acc_counts = get_acceptance_counts_hist(h_counts, os.path.join(path, acceptance_file))
-h_flux = get_flux_hist(h_acc_counts)
-
+h_acc_counts.Rebin2D(5, 5)
+h_flux = get_flux_hist(h_acc_counts, time=acquisition_time_seconds)
 h_flux.Print()
 
 plot_dir = "TestFlux"
-
 make_mpl_plot(
-        h_flux,
-        savefig=os.path.join(plot_dir, h_flux.GetName()),
-        log_scale=False,
-        title="Muon Flux",
-        units="$\mathrm{N_{\mu}/[GeV\;x\;s\;x\;sr\;x\;m^{2}]}$",
-    )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    h_flux,
+    cmap="cmr.ocean",
+    savefig=os.path.join(plot_dir, h_flux.GetName()),
+    log_scale=False,
+    draw_grid=True,
+    title="Measured Flux",
+    units="$\mathrm{N_{\mu}/[GeV\;x\;s\;x\;sr\;x\;m^{2}]}$",
+)
