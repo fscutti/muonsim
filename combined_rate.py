@@ -172,7 +172,7 @@ def get_total_flux(h_flux_list):
             # represent a meaningful flux.
             bin_is_on_edge = False
             #if self._remove_edge_bins:
-            bin_is_on_edge = check_edge(h_flux, x_idx, y_idx)
+            #bin_is_on_edge = check_edge(h_flux, x_idx, y_idx)
 
             if bin_flux and (not math.isnan(bin_flux)) and (not bin_is_on_edge):
                 hm_num += 1.0
@@ -188,22 +188,26 @@ def get_total_flux(h_flux_list):
     return h_tot_flux
 
 
+path = "/Users/fscutti/github/muonsim"
 
-path = "/Users/fscutti/github/muonsim/TestFlux"
+input_dir = os.path.join(path, "TestFlux")
+output_dir = os.path.join(path, "TestFlux")
 
-input_file = ROOT.TFile(os.path.join(path, "Costerfield_fluxes.root"), "READ")
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
+input_file = ROOT.TFile(os.path.join(input_dir, "Costerfield_fluxes.root"), "READ")
 
 h_flux_list = []
 for h in input_file.GetListOfKeys():
     h_flux_list.append(input_file.Get(h.GetName()))
-
 
 h_tot_flux = get_total_flux(h_flux_list)
 
 make_mpl_plot(
     h_tot_flux,
     cmap="cmr.ocean",
-    savefig=os.path.join(path, h_tot_flux.GetName()),
+    savefig=os.path.join(output_dir, h_tot_flux.GetName()),
     log_scale=False,
     draw_grid=True,
     title="Total Measured Flux",
