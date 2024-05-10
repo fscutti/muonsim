@@ -20,6 +20,7 @@ import cmasher
 
 # NOTE: this should be run with the pyrate environment.
 
+
 def find_tag(line, delimiter="   "):
     sensor_tag = ["A", "B", "C", "D", "E"]
     line = line.replace(" ", "")
@@ -240,6 +241,7 @@ def get_flux_hist(count_hist, time=1, surface=0.15 * 0.15):
 
     return flux_hist
 
+
 # -------------
 # Configuration
 # -------------
@@ -249,7 +251,7 @@ regions = geo.barmod_telescope_v2.regions
 path = "/Users/fscutti/github/muonsim"
 
 input_dir = os.path.join(path, "data")
-output_dir = os.path.join(path, "TestFlux")
+output_dir = os.path.join(path, "AllFlux")
 
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
@@ -258,64 +260,68 @@ acceptance_file = "AltCosterfieldEffMap_5000000_5x5_Strip.root"
 
 files = [f for f in os.listdir(input_dir) if f.endswith(".log")]
 
-out_file = ROOT.TFile.Open(os.path.join(output_dir, "Costerfield_fluxes.root"), "RECREATE")
+out_file = ROOT.TFile.Open(
+    os.path.join(output_dir, "Costerfield_fluxes.root"), "RECREATE"
+)
 
 orientation = {}
-orientation["Mod5"] = 0.
-orientation["Mod2"] = 180.
+orientation["Mod3"] = 0.0
+orientation["Mod5"] = 0.0
+orientation["Mod2"] = 180.0
 
 # -------------
 # Main loop
 # -------------
 for file_name in files:
-    
     h_name = file_name.split(".")[0]
 
     orientation_tag = h_name.split("_")[0]
-    
+
     h_counts = ROOT.TH2F(
         f"h_counts_{h_name}", f"h_counts_{h_name}", 360, 0, 360, 45, 45, 90
     )
     acquisition_time_seconds = 0
-    
+
     with open(os.path.join(input_dir, file_name)) as file:
         for line in file:
             if line.startswith("Total Blocks (Seconds):"):
                 acquisition_time_seconds = int(line.split(":")[1].replace(" ", ""))
-    
+
             if "...." in line:
                 upper_panel, lower_panel = line.split("....")
-    
+
                 upper_panel_top_layer, upper_panel_lower_layer = upper_panel.split("|")
                 lower_panel_top_layer, lower_panel_lower_layer = lower_panel.split("|")
-    
+
                 uptl = find_tag(upper_panel_top_layer)
                 upll = find_tag(upper_panel_lower_layer)
                 lptl = find_tag(lower_panel_top_layer)
                 lpll = find_tag(lower_panel_lower_layer)
-    
+
                 region_name = f"Top_T{uptl}_Top_B{upll}_Bottom_T{lptl}_Bottom_B{lpll}"
-    
+
                 top_region, bottom_region = regions[region_name]
-    
+
                 top_hit = get_hit(*top_region)
                 bottom_hit = get_hit(*bottom_region)
-    
+
                 muon = top_hit - bottom_hit
-    
+
                 muon_elevation = 90.0 - get_zenith(*top_hit, *bottom_hit)
                 muon_azimuth = get_azimuth(*top_hit, *bottom_hit)
                 muon_azimuth = (muon_azimuth + orientation[orientation_tag]) % 360
-    
+
                 h_counts.Fill(muon_azimuth, muon_elevation)
-    
-    h_acc_counts = get_acceptance_counts_hist(h_counts, os.path.join(input_dir, acceptance_file))
-    h_acc_counts.Rebin2D(5, 5)
+
+    h_acc_counts = get_acceptance_counts_hist(
+        h_counts, os.path.join(input_dir, acceptance_file)
+    )
+    h_acc_counts.Rebin2D(10, 9)
     h_flux = get_flux_hist(h_acc_counts, time=acquisition_time_seconds)
     h_flux.Print()
 
     out_file.WriteObject(h_flux, h_flux.GetName())
-    
+
     make_mpl_plot(
         h_flux,
         cmap="cmr.ocean",
