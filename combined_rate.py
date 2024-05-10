@@ -20,6 +20,7 @@ import cmasher
 
 # NOTE: this should be run with the pyrate environment.
 
+
 def make_mpl_plot(
     hist,
     cmap="cmr.torch",
@@ -131,7 +132,6 @@ def make_mpl_plot(
         plt.show()
 
 
-
 def check_edge(h, x_idx, y_idx):
     neighbours = (
         h.GetBinContent(x_idx, y_idx + 1),
@@ -154,8 +154,8 @@ def check_edge(h, x_idx, y_idx):
 
     return zeroes >= 1
 
+
 def get_total_flux(h_flux_list):
-    
     h_tot_flux = copy(h_flux_list[0])
     h_tot_flux.Reset()
     h_tot_flux.SetName("h_total_flux")
@@ -171,8 +171,8 @@ def get_total_flux(h_flux_list):
             # We might want to remove bins at the edges as they cannot
             # represent a meaningful flux.
             bin_is_on_edge = False
-            #if self._remove_edge_bins:
-            #bin_is_on_edge = check_edge(h_flux, x_idx, y_idx)
+            # if self._remove_edge_bins:
+            # bin_is_on_edge = check_edge(h_flux, x_idx, y_idx)
 
             if bin_flux and (not math.isnan(bin_flux)) and (not bin_is_on_edge):
                 hm_num += 1.0
@@ -188,41 +188,41 @@ def get_total_flux(h_flux_list):
     return h_tot_flux
 
 
+# -------------
+# Configuration
+# -------------
 path = "/Users/fscutti/github/muonsim"
 
-input_dir = os.path.join(path, "TestFlux")
-output_dir = os.path.join(path, "TestFlux")
+input_dir = os.path.join(path, "AllFlux")
+output_dir = os.path.join(path, "AllFlux")
 
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
 input_file = ROOT.TFile(os.path.join(input_dir, "Costerfield_fluxes.root"), "READ")
 
+# selection = ["Mod2", "Mod5"]
+selection = ["Mod3", "Mod5"]
+
+# ---------------
+# Making the plot
+# ---------------
 h_flux_list = []
 for h in input_file.GetListOfKeys():
-    h_flux_list.append(input_file.Get(h.GetName()))
+    # Selecting histograms.
+    if any([bool(s in h.GetName()) for s in selection]):
+        h_flux_list.append(input_file.Get(h.GetName()))
 
 h_tot_flux = get_total_flux(h_flux_list)
+
+selection_tag = "+".join(selection)
 
 make_mpl_plot(
     h_tot_flux,
     cmap="cmr.ocean",
-    savefig=os.path.join(output_dir, h_tot_flux.GetName()),
+    savefig=os.path.join(output_dir, h_tot_flux.GetName() + selection_tag),
     log_scale=False,
     draw_grid=True,
-    title="Total Measured Flux",
+    title=f"Total Measured Flux {selection_tag}",
     units="$\mathrm{N_{\mu}/[GeV\;x\;s\;x\;sr\;x\;m^{2}]}$",
 )
-
-
-
-
-
-
-
-
-
-
-
-
-
