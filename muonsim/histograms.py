@@ -45,12 +45,20 @@ prof2d_ang_acc_vs_true = R.TProfile2D(
     "angular acceptance vs true angles",
     500,
     0,
-    50,
+    90,
     100,
     0,
     360,
     0,
     2,
+    #500,
+    #0,
+    #90,
+    #4,
+    #0,
+    #360,
+    #0,
+    #2,
 )
 prof2d_ang_acc_vs_true.GetXaxis().SetTitle("#theta_{true} [deg]")
 prof2d_ang_acc_vs_true.GetYaxis().SetTitle("#phi_{true} [deg]")

@@ -16,8 +16,9 @@ from muonsim import plotter
 from muonsim.Detector import Detector
 
 LIVE_MODE = False
+SHOW_FINAL_PLOT = True
 # NUM_SAMPLES = 5_000_000
-NUM_SAMPLES = 10000
+NUM_SAMPLES = 1000
 USE_MUON_FLUX = False
 MIN_PHI, MAX_PHI = 0.0, 360.0
 np.random.seed(42)
@@ -36,7 +37,7 @@ else:
     # Setting up uniform generation
     # -------------------------------
     # These parameters are only used for the uniform distribution.
-    MIN_THETA, MAX_THETA = 0.0, 50.0
+    MIN_THETA, MAX_THETA = 0.0, 89.0
     MIN_ENERGY, MAX_ENERGY = 0.0, 1000.0
     RANGE = {
         "theta": [MIN_THETA, MAX_THETA],
@@ -49,13 +50,17 @@ else:
 # ... one always needs the connections ...
 # DETECTOR = Detector(geo.block_telescope.detector)
 # DETECTOR = Detector(geo.strip_telescope.detector, geo.strip_telescope.connections)
-DETECTOR = Detector(geo.sabre_telescope.detector, geo.sabre_telescope.connections)
+DETECTOR = Detector(geo.barmod_telescope.detector, geo.barmod_telescope.connections)
+
+# DETECTOR = Detector(geo.barmod_telescope_v2.detector, geo.barmod_telescope_v2.connections)
+# DETECTOR = Detector(geo.sabre_telescope.detector, geo.sabre_telescope.connections)
 
 # Maximum amount of muons in memory.
 CLEAR_MUONS = 1000
 # Require coincidence of these specific modules.
 # required_modules = ["T12", "B12"]
-REQUIRED_MODULES = ["T", "M", "B"]
+# REQUIRED_MODULES = ["T", "M", "B"]
+REQUIRED_MODULES = []
 # Require that the muon intersects a certain number
 # of upper and lower boundary planes. Eiher one or two.
 REQUIRED_BOUNDARY_COINCIDENCES = [2]
@@ -63,9 +68,13 @@ REQUIRED_BOUNDARY_COINCIDENCES = [2]
 # -------------------------------
 # Setting up plotting
 # -------------------------------
-# FILE_NAME = f"CosterfieldEffMap_{NUM_SAMPLES}_{geo.strip_telescope.n_sensors}x{geo.strip_telescope.n_sensors}_{geo.strip_telescope.name}.root"
+# FILE_NAME = f"BarMODType1_EffMap_{NUM_SAMPLES}_{geo.strip_telescope.n_sensors}x{geo.strip_telescope.n_sensors}_{geo.strip_telescope.name}.root"
+# FILE_NAME = f"BarMODType2_EffMap_{NUM_SAMPLES}_{geo.strip_telescope.n_sensors}x{geo.strip_telescope.n_sensors}_{geo.strip_telescope.name}.root"
+
+FILE_NAME = f"TestCosterfieldEffMap_{NUM_SAMPLES}_{geo.strip_telescope.n_sensors}x{geo.strip_telescope.n_sensors}_{geo.strip_telescope.name}.root"
+
 # FILE_NAME = f"SABREFlux_{NUM_SAMPLES}_{geo.sabre_telescope.name}.root"
-FILE_NAME = f"Test_{NUM_SAMPLES}.root"
+# FILE_NAME = f"Test_{NUM_SAMPLES}.root"
 OUTPUT_DIRECTORY = FILE_NAME.split(".")[0]
 
 
@@ -238,12 +247,14 @@ def muon_loop(muons, detector, clear_muons=1000):
 def make_plots(detector, file_name, output_directory=None):
     """Plotting. It includes displaying the detector and muon rays."""
 
-    detector.plot(
-        add_elements=True,
-        add_muons=True,
-        add_intersections=False,
-        add_connections=False,
-    )
+    if SHOW_FINAL_PLOT:
+        detector.plot(
+            add_elements=True,
+            add_muons=True,
+            add_intersections=False,
+            add_connections=False,
+        )
+
     out_dir = "./"
     if output_directory is not None:
         if not os.path.exists(output_directory):

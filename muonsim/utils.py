@@ -1,6 +1,13 @@
 import numpy as np
 import math
 
+def bin_loop(hist):
+    """Generator for looping over 2D histogram bins."""
+    n_bins_x, n_bins_y = hist.GetNbinsX(), hist.GetNbinsY()
+
+    for x_idx in range(1, n_bins_x + 1):
+        for y_idx in range(1, n_bins_y + 1):
+            yield hist.GetBin(x_idx, y_idx), x_idx, y_idx
 
 def get_plane_intersection(plane_normal, plane_point, muon_direction, muon_point):
     """Computes the intersection b/w a muon and a plane."""

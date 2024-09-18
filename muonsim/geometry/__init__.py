@@ -1,3 +1,6 @@
 import muonsim.geometry.block_telescope
 import muonsim.geometry.strip_telescope
+import muonsim.geometry.barmod_telescope
+import muonsim.geometry.barmod_telescope_v2
+import muonsim.geometry.barmod_telescope_v3
 import muonsim.geometry.sabre_telescope
