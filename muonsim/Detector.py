@@ -5,14 +5,16 @@ import pyvista as pv
 import numpy as np
 
 from itertools import product
+from itertools import chain
 
 from muonsim import utils
 
 
 class Detector:
-    def __init__(self, elements, connections):
+    def __init__(self, elements, connections, areas):
         self.elements = elements
         self.connections = connections
+        self.areas = areas
 
         # The _elements attribute represents the active pyvista volumes
         # of the detector. The detector is inserted in a volume which
@@ -22,9 +24,19 @@ class Detector:
         self._elements_labels = {}
 
         self._elements_connections = {}
+        self._elements_areas = {}
 
         for c, extrema in self.connections.items():
             self._elements_connections[c] = pv.Line(*extrema)
+
+            top_area, bottom_area = self.areas[c]
+            top_bounds = list(chain.from_iterable(top_area))
+            bottom_bounds = list(chain.from_iterable(bottom_area))
+
+            self._elements_areas[c] = [
+                pv.Box(bounds=top_bounds),
+                pv.Box(bounds=bottom_bounds),
+            ]
 
         _max_x, _max_y, _max_z = 0, 0, 0
         _min_x, _min_y, _min_z = 1e9, 1e9, 1e9
@@ -77,6 +89,66 @@ class Detector:
         # bad events.
         self._bad_muon_hits = []
         self._bad_muon_intersections = []
+
+    def get_intersection_extension(self, connection, panel, coord):
+        """Returns the boundaries of the area traversed at
+        the center by a connection."""
+
+        p_idx = ["top", "bottom"].index(panel)
+
+        if coord == "x":
+            return [
+                self._elements_areas[connection][p_idx].bounds[0],
+                self._elements_areas[connection][p_idx].bounds[1],
+            ]
+
+        elif coord == "y":
+            return [
+                self._elements_areas[connection][p_idx].bounds[2],
+                self._elements_areas[connection][p_idx].bounds[3],
+            ]
+
+        elif coord == "z":
+            return [
+                self._elements_areas[connection][p_idx].bounds[4],
+                self._elements_areas[connection][p_idx].bounds[5],
+            ]
+
+        else:
+            err_msg = f"ERROR: trying to get {coord} extension"
+            err_msg += " for connection {connetion} and {panel} panel"
+            err_msg += " but the area is not found by the Detector class."
+            sys.exit(err_msg)
+
+    def get_intersection_center(self, connection, panel, coord):
+        """Returns the central coordinates of the area traversed
+        by a connection."""
+
+        p_idx = ["top", "bottom"].index(panel)
+
+        if coord == "x":
+            return (
+                self._elements_areas[connection][p_idx].bounds[0]
+                + self._elements_areas[connection][p_idx].bounds[1]
+            ) / 2.0
+
+        elif coord == "y":
+            return (
+                self._elements_areas[connection][p_idx].bounds[2]
+                + self._elements_areas[connection][p_idx].bounds[3]
+            ) / 2.0
+
+        elif coord == "z":
+            return (
+                self._elements_areas[connection][p_idx].bounds[4]
+                + self._elements_areas[connection][p_idx].bounds[5]
+            ) / 2.0
+
+        else:
+            err_msg = f"ERROR: trying to get {coord} center"
+            err_msg += " for connection {connetion} and {panel} panel"
+            err_msg += " but the area is not found by the Detector class."
+            sys.exit(err_msg)
 
     def _find_muon_endpoints(self, muon_theta, muon_phi, muon_origin):
         """Finds the intersection between a muon and the planes
