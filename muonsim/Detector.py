@@ -316,6 +316,18 @@ class Detector:
             *self._reconstructed_muon
         )
 
+    def generate_hit(self, connection, panel):
+        """Generation of a muon hit in a detector panel. N.B the z coordinate 
+        is kept at a constant value and not randomised."""
+        range_x = self.get_intersection_extension(connection, panel, "x")
+        range_y = self.get_intersection_extension(connection, panel, "y")
+
+        hit_x = np.random.uniform(*range_x)
+        hit_y = np.random.uniform(*range_y)
+        hit_z = self.get_intersection_center(connection, panel, "z")
+
+        return [hit_x, hit_y, hit_z]
+
     def reconstruct(self):
         """Get reconstructed muon endpoints."""
         current_hit_modules = set(self._muon_hits)
@@ -324,9 +336,12 @@ class Detector:
             reconstructed_combination = set(c.split("_"))
 
             if reconstructed_combination.issubset(current_hit_modules):
-                start, stop = extrema
-                self._reconstructed_muon = [np.array(start), np.array(stop)]
+                # start, stop = extrema
 
+                start = self.generate_hit(c, "top")
+                stop = self.generate_hit(c, "bottom")
+
+                self._reconstructed_muon = [np.array(start), np.array(stop)]
                 return True
 
         return False

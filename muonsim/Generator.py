@@ -35,6 +35,7 @@ class Generator:
         for m_idx in range(n_samples):
             muon = {"start": None, "stop": None, "theta": None, "phi": None}
 
+            """
             start_range_x = self.detector.get_intersection_extension(
                 self.connection, "top", "x"
             )
@@ -59,9 +60,13 @@ class Generator:
             stop_z = self.detector.get_intersection_center(
                 self.connection, "bottom", "z"
             )
+            """
 
-            start = np.array([start_x, start_y, start_z])
-            stop = np.array([stop_x, stop_y, stop_z])
+            _start = self.detector.generate_hit(self.connection, "top")
+            _stop = self.detector.generate_hit(self.connection, "bottom")
+
+            start = np.array(_start)
+            stop = np.array(_stop)
 
             theta, phi = utils.get_polar_coor(start, stop)
 
