@@ -166,9 +166,10 @@ class Detector:
         }
         muon_versor = utils.get_versor(muon_theta, muon_phi)
 
-        # IMPORTANT: remember to change the z_bound to make it
-        # compatible with the innermost side of the sensitive
-        # area.
+        # Notice that the z_bound is chosen compatibly with the
+        # entire active volume of the detector. This active volume
+        # should not used in the generation of the muon hits but only
+        # to search for muon intersections.
         for z_bound in self.volume["z"]:
             # The plane normal and point are assumed to be
             # traced from the origin of the system.
@@ -316,15 +317,21 @@ class Detector:
             *self._reconstructed_muon
         )
 
-    def generate_hit(self, connection, panel):
-        """Generation of a muon hit in a detector panel. N.B the z coordinate 
+    def generate_hit(self, connection, panel, is_reconstruction=False):
+        """Generation of a muon hit in a detector panel. N.B the z coordinate
         is kept at a constant value and not randomised."""
         range_x = self.get_intersection_extension(connection, panel, "x")
         range_y = self.get_intersection_extension(connection, panel, "y")
+        range_z = self.get_intersection_extension(connection, panel, "z")
 
         hit_x = np.random.uniform(*range_x)
         hit_y = np.random.uniform(*range_y)
-        hit_z = self.get_intersection_center(connection, panel, "z")
+        hit_z = None
+
+        if is_reconstruction:
+            hit_z = np.random.uniform(*range_z)
+        else:
+            hit_z = self.get_intersection_center(connection, panel, "z")
 
         return [hit_x, hit_y, hit_z]
 
@@ -338,8 +345,8 @@ class Detector:
             if reconstructed_combination.issubset(current_hit_modules):
                 # start, stop = extrema
 
-                start = self.generate_hit(c, "top")
-                stop = self.generate_hit(c, "bottom")
+                start = self.generate_hit(c, "top", is_reconstruction=True)
+                stop = self.generate_hit(c, "bottom", is_reconstruction=True)
 
                 self._reconstructed_muon = [np.array(start), np.array(stop)]
                 return True

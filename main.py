@@ -20,13 +20,16 @@ from muonsim.Generator import Generator
 # Setting up muon generation.
 # -------------------------------
 # N_SAMPLES = 5_000_000
-N_SAMPLES = 1000
-PHI_RANGE = []
-THETA_RANGE = []
+N_SAMPLES = 100
+PHI_RANGE = [0, 360]
+THETA_RANGE = [0, 20]
+#PHI_RANGE = []
+#THETA_RANGE = []
 np.random.seed(42)
 # Muon generation will consider the geometry specified by the following
 # sequences of modules.
-REQUIRED_CONNECTIONS = ["TU1_TL1_BU5_BL5"]
+# REQUIRED_CONNECTIONS = ["TU1_TL1_BU5_BL5"]
+REQUIRED_CONNECTIONS = []
 
 # -------------------------------
 # Setting up muon reconstruction.
@@ -48,7 +51,7 @@ DETECTOR = Detector(
 LIVE_MODE = False
 
 # Maximum amount of muons in memory.
-CLEAR_MUONS = 10000
+CLEAR_MUONS = 1000
 
 # Require coincidence of these specific modules. N.B. this is not the same
 # as requiring specific coincidences, as events generated for one connection
@@ -59,14 +62,18 @@ REQUIRED_MODULES = []
 # Require that the muon intersects a certain number
 # of upper and lower boundary planes. Every number
 # in the list is a required number in OR with the others.
-# The most inclusive requirement is 0, 1, 2.
+# The most inclusive requirement is 0, 1, 2. 
+# IMPORTANT: boundary planes requirements are not the same
+# as hit requirements. A muon can have a meaningful number of hits
+# in the detector while not intersecting any boundary surfaces, 
+# e.g. if it comes from the side of the detector volume.
 REQUIRED_BOUNDARY_COINCIDENCES = [0, 1, 2]
 
 # -------------------------------
 # Setting up plotting
 # -------------------------------
-FILE_NAME = f"TestCosterfieldEffMap_{N_SAMPLES}_{GEO.strip_telescope.n_sensors}x{GEO.strip_telescope.n_sensors}_{GEO.strip_telescope.name}.root"
-# FILE_NAME = f"BarMODType1_EffMap_{N_SAMPLES}_{GEO.strip_telescope.n_sensors}x{GEO.strip_telescope.n_sensors}_{GEO.strip_telescope.name}.root"
+#FILE_NAME = f"BinningCosterfieldEffMap_{N_SAMPLES}_{GEO.strip_telescope.n_sensors}x{GEO.strip_telescope.n_sensors}_{GEO.strip_telescope.name}.root"
+FILE_NAME = f"NewBarMODType1_EffMap_{N_SAMPLES}_{GEO.strip_telescope.n_sensors}x{GEO.strip_telescope.n_sensors}_{GEO.strip_telescope.name}.root"
 # FILE_NAME = f"BarMODType2_EffMap_{N_SAMPLES}_{GEO.strip_telescope.n_sensors}x{GEO.strip_telescope.n_sensors}_{GEO.strip_telescope.name}.root"
 # FILE_NAME = f"SABREFlux_{N_SAMPLES}_{GEO.sabre_telescope.name}.root"
 # FILE_NAME = f"Test_{N_SAMPLES}.root"
@@ -74,7 +81,7 @@ OUTPUT_DIRECTORY = FILE_NAME.split(".")[0]
 
 # An interactive plot is displayed including not more than CLEAR_MUONS muons
 # reconstructed by the detector.
-SHOW_FINAL_PLOT = True
+SHOW_FINAL_PLOT = False
 
 
 def muon_generation(
@@ -179,13 +186,26 @@ def muon_reconstruction(
                 true_muon_theta, true_muon_phi = true_muon
                 reco_muon_theta, reco_muon_phi = reco_muon
 
+                true_muon_elevation = 90.0 - true_muon_theta
+                reco_muon_elevation = 90.0 - reco_muon_theta
+
                 ang_dist = utils.angular_distance_3d(reco_direction, true_direction)
+
+                el_dist = 2.0 * utils.angle_distance(
+                    reco_muon_elevation, true_muon_elevation
+                )
+                az_dist = 2.0 * utils.angle_distance(reco_muon_phi, true_muon_phi)
+
+                sq_el_diff = el_dist**2
+                sq_phi_diff = az_dist**2
 
                 if live_mode:
                     print("----------------------------------------")
                     print("Theta (reco, true): ", reco_muon_theta, true_muon_theta)
                     print("Phi (reco, true): ", reco_muon_phi, true_muon_phi)
                     print("Angular distance (reco, true):", ang_dist)
+                    print("Elevation distance (reco, true):", el_dist)
+                    print("Azimuthal distance (reco, true):", az_dist)
                     print("----------------------------------------")
                     print()
 
@@ -270,6 +290,48 @@ def muon_reconstruction(
                     reco_muon_theta, reco_muon_phi, ang_dist
                 )
 
+                # RMS vs reco, RMS vs true.
+                utils.fill_max(
+                    histograms.el_max_dist_vs_reco,
+                    reco_muon_elevation,
+                    reco_muon_phi,
+                    el_dist,
+                )
+                utils.fill_max(
+                    histograms.el_max_dist_vs_true,
+                    true_muon_elevation,
+                    true_muon_phi,
+                    el_dist,
+                )
+
+                utils.fill_max(
+                    histograms.az_max_dist_vs_reco,
+                    reco_muon_elevation,
+                    reco_muon_phi,
+                    az_dist,
+                )
+                utils.fill_max(
+                    histograms.az_max_dist_vs_true,
+                    true_muon_elevation,
+                    true_muon_phi,
+                    az_dist,
+                )
+
+                histograms.prof2d_el_rms_vs_reco.Fill(
+                    reco_muon_elevation, reco_muon_phi, sq_el_diff
+                )
+                histograms.prof2d_el_rms_vs_true.Fill(
+                    true_muon_elevation, true_muon_phi, sq_el_diff
+                )
+
+                histograms.prof2d_az_rms_vs_reco.Fill(
+                    reco_muon_elevation, reco_muon_phi, sq_phi_diff
+                )
+                histograms.prof2d_az_rms_vs_true.Fill(
+                    true_muon_elevation, true_muon_phi, sq_phi_diff
+                )
+
+                # WARNING: the histogram below is not useful for much!
                 histograms.prof2d_ang_acc_vs_reco.Fill(
                     reco_muon_theta, reco_muon_phi, detector_acceptance / n_gen_muons
                 )
@@ -367,6 +429,68 @@ def make_plots(
     )
     out_file.WriteObject(
         histograms.prof2d_ang_acc_vs_reco, histograms.prof2d_ang_acc_vs_reco.GetName()
+    )
+
+    # The following four histograms will need some transformation.
+
+    # Transforming the TProfile2D objects in 2D histograms.
+    histograms.prof2d_el_rms_vs_reco = histograms.prof2d_el_rms_vs_reco.ProjectionXY()
+    histograms.prof2d_el_rms_vs_true = histograms.prof2d_el_rms_vs_true.ProjectionXY()
+    histograms.prof2d_az_rms_vs_reco = histograms.prof2d_az_rms_vs_reco.ProjectionXY()
+    histograms.prof2d_az_rms_vs_true = histograms.prof2d_az_rms_vs_true.ProjectionXY()
+
+    for glob_idx, el_idx, az_idx in utils.bin_loop(histograms.prof2d_el_rms_vs_reco):
+        bin_content = histograms.prof2d_el_rms_vs_reco.GetBinContent(glob_idx)
+        # bin_norm = utils.bin_solid_angle(histograms.prof2d_el_rms_vs_reco, el_idx, az_idx)
+        histograms.prof2d_el_rms_vs_reco.SetBinContent(
+            glob_idx, math.sqrt(bin_content)
+        )
+
+    for glob_idx, el_idx, az_idx in utils.bin_loop(histograms.prof2d_el_rms_vs_true):
+        bin_content = histograms.prof2d_el_rms_vs_true.GetBinContent(glob_idx)
+        # bin_norm = utils.bin_solid_angle(histograms.prof2d_el_rms_vs_true, el_idx, az_idx)
+        histograms.prof2d_el_rms_vs_true.SetBinContent(
+            glob_idx, math.sqrt(bin_content)
+        )
+
+    for glob_idx, el_idx, az_idx in utils.bin_loop(histograms.prof2d_az_rms_vs_reco):
+        bin_content = histograms.prof2d_az_rms_vs_reco.GetBinContent(glob_idx)
+        # bin_norm = utils.bin_solid_angle(histograms.prof2d_az_rms_vs_reco, el_idx, az_idx)
+        histograms.prof2d_az_rms_vs_reco.SetBinContent(
+            glob_idx, math.sqrt(bin_content)
+        )
+
+    for glob_idx, el_idx, az_idx in utils.bin_loop(histograms.prof2d_az_rms_vs_true):
+        bin_content = histograms.prof2d_az_rms_vs_true.GetBinContent(glob_idx)
+        # bin_norm = utils.bin_solid_angle(histograms.prof2d_az_rms_vs_true, el_idx, az_idx)
+        histograms.prof2d_az_rms_vs_true.SetBinContent(
+            glob_idx, math.sqrt(bin_content)
+        )
+
+    out_file.WriteObject(
+        histograms.prof2d_el_rms_vs_reco, histograms.prof2d_el_rms_vs_reco.GetName()
+    )
+    out_file.WriteObject(
+        histograms.prof2d_el_rms_vs_true, histograms.prof2d_el_rms_vs_true.GetName()
+    )
+    out_file.WriteObject(
+        histograms.prof2d_az_rms_vs_reco, histograms.prof2d_az_rms_vs_reco.GetName()
+    )
+    out_file.WriteObject(
+        histograms.prof2d_az_rms_vs_true, histograms.prof2d_az_rms_vs_true.GetName()
+    )
+
+    out_file.WriteObject(
+        histograms.el_max_dist_vs_reco, histograms.el_max_dist_vs_reco.GetName()
+    )
+    out_file.WriteObject(
+        histograms.el_max_dist_vs_true, histograms.el_max_dist_vs_true.GetName()
+    )
+    out_file.WriteObject(
+        histograms.az_max_dist_vs_reco, histograms.az_max_dist_vs_reco.GetName()
+    )
+    out_file.WriteObject(
+        histograms.az_max_dist_vs_true, histograms.az_max_dist_vs_true.GetName()
     )
 
     for element in detector.elements:

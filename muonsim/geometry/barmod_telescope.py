@@ -11,30 +11,30 @@ name = "Strip"
 # This is for a MOD Type1
 # (the telescope)
 # -----------------------
-# panels_gap = 97.4
+panels_gap = 97.4
 
-# sensor_side = 2.98
-# sensor_length = 15.0
-# sensor_height = 1.24
+sensor_side = 2.98
+sensor_length = 15.0
+sensor_height = 1.24
 
-# n_sensors = 5
-# sensors_spacing = 0.04
-# layers_gap = 0.1
+n_sensors = 5
+sensors_spacing = 0.04
+layers_gap = 0.1
 # -----------------------
 
 # -----------------------
 # This is for a MOD Type2
 # (the box)
 # -----------------------
-panels_gap = 12.8
+# panels_gap = 12.8
 
-sensor_side = 3.0
-sensor_length = 15.15
-sensor_height = 1.0
+# sensor_side = 3.0
+# sensor_length = 15.15
+# sensor_height = 1.0
 
-sensors_spacing = 0.04
-layers_gap = 0.1
-n_sensors = 5
+# sensors_spacing = 0.04
+# layers_gap = 0.1
+# n_sensors = 5
 # -----------------------
 
 # -----------------------
@@ -114,17 +114,18 @@ for upper_sensor in ["TU1", "TU2", "TU3", "TU4", "TU5"]:
         min_y = max(detector[upper_sensor]["y"][0], detector[lower_sensor]["y"][0])
         max_y = min(detector[upper_sensor]["y"][1], detector[lower_sensor]["y"][1])
 
-        panel_thickness = panels_gap / 2.0 + sensor_height
-
         x = (max_x + min_x) / 2.0
         y = (max_y + min_y) / 2.0
-        z = panel_thickness + layers_gap / 2.0
+        z = (panels_gap + layers_gap) / 2.0 + sensor_height
 
         _top_intersections[f"{upper_sensor}_{lower_sensor}"] = [x, y, z]
         _top_areas[f"{upper_sensor}_{lower_sensor}"] = [
             [min_x, max_x],
             [min_y, max_y],
-            [z - panel_thickness, z + panel_thickness],
+            [
+                z - sensor_height - (layers_gap / 2.0),
+                z + sensor_height + (layers_gap / 2.0),
+            ],
         ]
 
 
@@ -138,17 +139,20 @@ for upper_sensor in ["BU1", "BU2", "BU3", "BU4", "BU5"]:
         min_y = max(detector[upper_sensor]["y"][0], detector[lower_sensor]["y"][0])
         max_y = min(detector[upper_sensor]["y"][1], detector[lower_sensor]["y"][1])
 
-        panel_thickness = panels_gap / 2.0 + sensor_height
+        panel_thickness = layers_gap / 2.0 + sensor_height
 
         x = (max_x + min_x) / 2.0
         y = (max_y + min_y) / 2.0
-        z = -(panel_thickness + layers_gap / 2.0)
+        z = -(panels_gap + layers_gap) / 2.0 - sensor_height
 
         _bottom_intersections[f"{upper_sensor}_{lower_sensor}"] = [x, y, z]
         _bottom_areas[f"{upper_sensor}_{lower_sensor}"] = [
             [min_x, max_x],
             [min_y, max_y],
-            [z - panel_thickness, z + panel_thickness],
+            [
+                z - sensor_height - (layers_gap / 2.0),
+                z + sensor_height + (layers_gap / 2.0),
+            ],
         ]
 
 # Relevant connections. These are meaninful geometrical relations between

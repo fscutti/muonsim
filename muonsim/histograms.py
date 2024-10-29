@@ -115,6 +115,143 @@ prof2d_ang_dist_vs_reco.GetXaxis().SetTitle("#theta_{reco} [deg]")
 prof2d_ang_dist_vs_reco.GetYaxis().SetTitle("#phi_{reco} [deg]")
 prof2d_ang_dist_vs_reco.GetZaxis().SetTitle("#Delta#Omega(reco - true) [deg]")
 
+
+# Elevation RMS between reconstructed and true muon as a function of the reconstructed angles.
+prof2d_el_rms_vs_reco = R.TProfile2D(
+    "p2_el_rms_vs_reco",
+    "Elevation 2 #times RMS vs reconstructed angles",
+    30,
+    0,
+    90,
+    180,
+    0,
+    360,
+    0,
+    90,
+)
+prof2d_el_rms_vs_reco.GetXaxis().SetTitle("#eta_{reco} [deg]")
+prof2d_el_rms_vs_reco.GetYaxis().SetTitle("#phi_{reco} [deg]")
+prof2d_el_rms_vs_reco.GetZaxis().SetTitle("2 RMS (#eta_{reco} - #eta_{true}) [deg]")
+
+
+# Azimuth RMS between reconstructed and true muon as a function of the reconstructed angles.
+prof2d_az_rms_vs_reco = R.TProfile2D(
+    "p2_az_rms_vs_reco",
+    "Azimuth 2 #times RMS vs reconstructed angles",
+    30,
+    0,
+    90,
+    180,
+    0,
+    360,
+    0,
+    360,
+)
+prof2d_az_rms_vs_reco.GetXaxis().SetTitle("#eta_{reco} [deg]")
+prof2d_az_rms_vs_reco.GetYaxis().SetTitle("#phi_{reco} [deg]")
+prof2d_az_rms_vs_reco.GetZaxis().SetTitle("2 RMS (#phi_{reco} - #phi_{true}) [deg^{2}]")
+
+
+# Elevation RMS between reconstructed and true muon as a function of the true angles.
+prof2d_el_rms_vs_true = R.TProfile2D(
+    "p2_el_rms_vs_true",
+    "Elevation 2 #times RMS vs true angles",
+    30,
+    0,
+    90,
+    180,
+    0,
+    360,
+    0,
+    90,
+)
+prof2d_el_rms_vs_true.GetXaxis().SetTitle("#eta_{true} [deg]")
+prof2d_el_rms_vs_true.GetYaxis().SetTitle("#phi_{true} [deg]")
+prof2d_el_rms_vs_true.GetZaxis().SetTitle("2 RMS (#eta_{reco} - #eta_{true}) [deg]")
+
+
+# Azimuth RMS between reconstructed and true muon as a function of the true angles.
+prof2d_az_rms_vs_true = R.TProfile2D(
+    "p2_az_rms_vs_true",
+    "Azimuth 2 #times RMS vs true angles",
+    30,
+    0,
+    90,
+    180,
+    0,
+    360,
+    0,
+    360,
+)
+prof2d_az_rms_vs_true.GetXaxis().SetTitle("#eta_{reco} [deg]")
+prof2d_az_rms_vs_true.GetYaxis().SetTitle("#phi_{reco} [deg]")
+prof2d_az_rms_vs_true.GetZaxis().SetTitle("2 RMS (#phi_{reco} - #phi_{true}) [deg]")
+
+
+# Elevation RMS between reconstructed and true muon as a function of the reconstructed angles.
+el_max_dist_vs_reco = R.TH2F(
+    "h2_max_el_dist_vs_reco",
+    "Max Elevation vs reconstructed angles",
+    30,
+    0,
+    90,
+    180,
+    0,
+    360,
+)
+el_max_dist_vs_reco.GetXaxis().SetTitle("#eta_{reco} [deg]")
+el_max_dist_vs_reco.GetYaxis().SetTitle("#phi_{reco} [deg]")
+el_max_dist_vs_reco.GetZaxis().SetTitle("Max |#eta_{reco} - #eta_{true}| [deg]")
+
+
+# Azimuth RMS between reconstructed and true muon as a function of the reconstructed angles.
+az_max_dist_vs_reco = R.TH2F(
+    "h2_max_az_dist_vs_reco",
+    "Max Azimuth vs reconstructed angles",
+    30,
+    0,
+    90,
+    180,
+    0,
+    360,
+)
+az_max_dist_vs_reco.GetXaxis().SetTitle("#eta_{reco} [deg]")
+az_max_dist_vs_reco.GetYaxis().SetTitle("#phi_{reco} [deg]")
+az_max_dist_vs_reco.GetZaxis().SetTitle("Max |#phi_{reco} - #phi_{true}| [deg^{2}]")
+
+
+# Elevation RMS between reconstructed and true muon as a function of the true angles.
+el_max_dist_vs_true = R.TH2F(
+    "h2_max_el_dist_vs_true",
+    "Max Elevation vs true angles",
+    30,
+    0,
+    90,
+    180,
+    0,
+    360,
+)
+el_max_dist_vs_true.GetXaxis().SetTitle("#eta_{true} [deg]")
+el_max_dist_vs_true.GetYaxis().SetTitle("#phi_{true} [deg]")
+el_max_dist_vs_true.GetZaxis().SetTitle("Max |#eta_{reco} - #eta_{true}| [deg]")
+
+
+# Azimuth RMS between reconstructed and true muon as a function of the true angles.
+az_max_dist_vs_true = R.TH2F(
+    "h2_max_az_dist_vs_true",
+    "Max Azimuth dist vs true angles",
+    30,
+    0,
+    90,
+    180,
+    0,
+    360,
+)
+az_max_dist_vs_true.GetXaxis().SetTitle("#eta_{true} [deg]")
+az_max_dist_vs_true.GetYaxis().SetTitle("#phi_{true} [deg]")
+az_max_dist_vs_true.GetZaxis().SetTitle("Max |#phi_{reco} - #phi_{true}| [deg]")
+
+
 # True vs reconstructed zenith angle as a profile histogram.
 prof_true_vs_reco_theta = R.TProfile(
     "p_true_vs_reco_theta", "reco vs true theta", 500, 0, 50, 0, 50
