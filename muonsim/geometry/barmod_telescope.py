@@ -11,30 +11,30 @@ name = "Strip"
 # This is for a MOD Type1
 # (the telescope)
 # -----------------------
-panels_gap = 97.4
+# panels_gap = 97.42
 
-sensor_side = 2.98
-sensor_length = 15.0
-sensor_height = 1.24
+# sensor_side = 2.98
+# sensor_length = 15.0
+# sensor_height = 1.24
 
-n_sensors = 5
-sensors_spacing = 0.04
-layers_gap = 0.1
+# n_sensors = 5
+# sensors_spacing = 0.04
+# layers_gap = 0.1
 # -----------------------
 
 # -----------------------
 # This is for a MOD Type2
 # (the box)
 # -----------------------
-# panels_gap = 12.8
+panels_gap = 12.8
 
-# sensor_side = 3.0
-# sensor_length = 15.15
-# sensor_height = 1.0
+sensor_side = 3.0
+sensor_length = 15.15
+sensor_height = 1.0
 
-# sensors_spacing = 0.04
-# layers_gap = 0.1
-# n_sensors = 5
+sensors_spacing = 0.04
+layers_gap = 0.1
+n_sensors = 5
 # -----------------------
 
 # -----------------------

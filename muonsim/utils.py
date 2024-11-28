@@ -1,5 +1,81 @@
+from copy import copy
+
 import numpy as np
 import math
+
+
+def get_corr_weight(h_corr, muon_theta, muon_phi):
+    """Get the correction weight from the correction histogram."""
+
+    if h_corr is None:
+        return 1.0
+
+    x_corr_idx = h_corr.GetXaxis().FindBin(muon_theta)
+    y_corr_idx = h_corr.GetYaxis().FindBin(muon_phi)
+
+    correction_weight = h_corr.GetBinContent(x_corr_idx, y_corr_idx)
+
+    if correction_weight:
+        return correction_weight
+
+    return 0.0
+
+
+def make_pdf(
+    new_hist,
+    old_hist,
+    normalise_angle=False,
+    perform_inversion=False,
+    perform_smoothing=False,
+):
+    """Normalise counts of the histogram by the angular bin width."""
+
+    for glob_idx, el_idx, az_idx in bin_loop(old_hist):
+        bin_content = old_hist.GetBinContent(glob_idx)
+
+        if bin_content > 0:
+            new_bin_content = bin_content
+
+            if perform_inversion:
+                new_bin_content = 1.0 / bin_content
+
+            if normalise_angle:
+                new_bin_content /= bin_solid_angle(old_hist, el_idx, az_idx)
+
+            new_hist.SetBinContent(glob_idx, new_bin_content)
+
+    if perform_smoothing:
+        new_hist.Smooth()
+
+    new_hist.Scale(1.0 / new_hist.Integral())
+
+
+def bin_solid_angle(hist, el_idx, az_idx):
+    """Normalisation factor taking into account angular areas and energy..."""
+    # The solid angle is expressed in rad.
+    deg = np.pi / 180.0
+
+    # Assuming that the original angles are in degrees and noticing that
+    # usually the input is given in zenith.
+    el_high = (90.0 - hist.GetXaxis().GetBinUpEdge(el_idx)) * deg
+    el_low = (90.0 - hist.GetXaxis().GetBinLowEdge(el_idx)) * deg
+
+    az_high = hist.GetYaxis().GetBinUpEdge(az_idx) * deg
+    az_low = hist.GetYaxis().GetBinLowEdge(az_idx) * deg
+
+    solid_angle = np.fabs(np.sin(el_high) - np.sin(el_low))
+    solid_angle *= az_high - az_low
+
+    return solid_angle / deg
+
+
+def fill_max(hist, elevation, azimuth, value):
+    """Replaces the content of the bin if value > current_value.
+    At the first iteration the histogram will be filled no matter what."""
+    glob_idx = hist.FindBin(elevation, azimuth)
+    current_value = hist.GetBinContent(glob_idx)
+    if value > current_value:
+        hist.SetBinContent(glob_idx, value)
 
 
 def bin_loop(hist):

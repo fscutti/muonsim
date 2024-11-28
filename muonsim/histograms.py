@@ -23,6 +23,77 @@ reco_theta.GetXaxis().SetTitle("#theta_{reco} [deg]")
 reco_theta.GetYaxis().SetTitle("Entries")
 
 
+# Reconstructed muons distribution.
+reco_raw = R.TH2F(
+    "h2_reco_raw", "reconstructed muons, non-weighted", 90, 0, 90, 360, 0, 360
+)
+reco_raw.GetXaxis().SetTitle("#theta_{reco} [deg]")
+reco_raw.GetYaxis().SetTitle("#phi_{reco} [deg]")
+reco_raw.GetZaxis().SetTitle("N_{#mu}")
+
+reco_weighted = R.TH2F(
+    # "h2_reco_weighted", "reconstructed muons, weighted", 6, 0, 90, 15, 0, 360
+    "h2_reco_weighted",
+    "reconstructed muons, weighted",
+    500,
+    0,
+    90,
+    100,
+    0,
+    360,
+)
+reco_weighted.GetXaxis().SetTitle("#theta_{reco} [deg]")
+reco_weighted.GetYaxis().SetTitle("#phi_{reco} [deg]")
+reco_weighted.GetZaxis().SetTitle("N_{#mu}")
+
+# True muons distribution.
+true_raw = R.TH2F("h2_true_raw", "true muons, non-weighted", 500, 0, 90, 100, 0, 360)
+true_raw.GetXaxis().SetTitle("#theta_{true} [deg]")
+true_raw.GetYaxis().SetTitle("#phi_{true} [deg]")
+true_raw.GetZaxis().SetTitle("N_{#mu}")
+
+true_weighted = R.TH2F(
+    # "h2_true_weighted", "true muons, weighted", 6, 0, 90, 16, 0, 360
+    "h2_true_weighted",
+    "true muons, weighted",
+    30,
+    0,
+    90,
+    20,
+    0,
+    360,
+)
+true_weighted.GetXaxis().SetTitle("#theta_{true} [deg]")
+true_weighted.GetYaxis().SetTitle("#phi_{true} [deg]")
+true_weighted.GetZaxis().SetTitle("N_{#mu}")
+
+
+# Correction for reconstructed muons.
+reco_correction = R.TH2F(
+    "h2_reco_correction", "reconstruction weights", 500, 0, 90, 100, 0, 360
+)
+reco_correction.GetXaxis().SetTitle("#theta_{reco} [deg]")
+reco_correction.GetYaxis().SetTitle("#phi_{reco} [deg]")
+reco_correction.GetZaxis().SetTitle("[a.u.]")
+
+
+# Validation of reconstructed muons.
+reco_validation = R.TH2F(
+    "h2_reco_validation",
+    "reconstruction validation",
+    30,
+    0,
+    90,
+    20,
+    0,
+    360
+    # "h2_reco_validation", "reconstruction validation", 500, 0, 90, 100, 0, 360
+)
+reco_validation.GetXaxis().SetTitle("#theta_{reco} [deg]")
+reco_validation.GetYaxis().SetTitle("#phi_{reco} [deg]")
+reco_validation.GetZaxis().SetTitle("[a.u.]")
+
+
 # True vs reconstructed zenith angle.
 true_vs_reco_theta = R.TH2F(
     "h2_true_vs_reco_theta", "reco vs true theta", 500, 0, 50, 500, 0, 50
@@ -40,8 +111,8 @@ true_vs_reco_phi.GetYaxis().SetTitle("#phi_{reco} [deg]")
 true_vs_reco_phi.GetZaxis().SetTitle("Entries")
 
 # Angular acceptance vs true angles.
-prof2d_ang_acc_vs_true = R.TProfile2D(
-    "p2_ang_acc_vs_true",
+prof2d_ang_acc_vs_true_high_reso = R.TProfile2D(
+    "p2_ang_acc_vs_true_high_reso",
     "angular acceptance vs true angles",
     500,
     0,
@@ -51,18 +122,26 @@ prof2d_ang_acc_vs_true = R.TProfile2D(
     360,
     0,
     2,
-    # 500,
-    # 0,
-    # 90,
-    # 4,
-    # 0,
-    # 360,
-    # 0,
-    # 2,
 )
-prof2d_ang_acc_vs_true.GetXaxis().SetTitle("#theta_{true} [deg]")
-prof2d_ang_acc_vs_true.GetYaxis().SetTitle("#phi_{true} [deg]")
-prof2d_ang_acc_vs_true.GetZaxis().SetTitle("N(Reco) / N(Total)")
+prof2d_ang_acc_vs_true_high_reso.GetXaxis().SetTitle("#theta_{true} [deg]")
+prof2d_ang_acc_vs_true_high_reso.GetYaxis().SetTitle("#phi_{true} [deg]")
+prof2d_ang_acc_vs_true_high_reso.GetZaxis().SetTitle("N(Reco) / N(Total)")
+
+prof2d_ang_acc_vs_true_low_reso = R.TProfile2D(
+    "p2_ang_acc_vs_true_low_reso",
+    "angular acceptance vs true angles",
+    30,
+    0,
+    90,
+    8,
+    0,
+    360,
+    0,
+    2,
+)
+prof2d_ang_acc_vs_true_low_reso.GetXaxis().SetTitle("#theta_{true} [deg]")
+prof2d_ang_acc_vs_true_low_reso.GetYaxis().SetTitle("#phi_{true} [deg]")
+prof2d_ang_acc_vs_true_low_reso.GetZaxis().SetTitle("N(Reco) / N(Total)")
 
 # Angular acceptance vs reconstructed angles.
 prof2d_ang_acc_vs_reco = R.TProfile2D(

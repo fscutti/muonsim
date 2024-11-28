@@ -223,9 +223,15 @@ class Detector:
         muon_origin,
         required_boundary_coincidences,
         required_modules,
+        required_n_modules,
     ):
         """Performs the intersection between a muon and the active
         volume of the detector."""
+
+        # if len(set(required_modules)) not in required_n_modules:
+        #    sys.exit(
+        #        f"ERROR: requiring modules {required_modules} but only #{required_n_modules} are allowed."
+        #    )
 
         muon_endpoints, muon_boundary_coincidences = self._find_muon_endpoints(
             muon_theta, muon_phi, muon_origin
@@ -247,6 +253,10 @@ class Detector:
 
             if required_modules:
                 if not set(required_modules) == set(hits):
+                    return False
+
+            if required_n_modules:
+                if len(set(hits)) not in required_n_modules:
                     return False
 
             self._muons.append([muon_start, muon_stop])
@@ -329,7 +339,12 @@ class Detector:
         hit_z = None
 
         if is_reconstruction:
+            # if panel == "top":
             hit_z = np.random.uniform(*range_z)
+            # else:
+            # hit_x = self.get_intersection_center(connection, panel, "x")
+            # hit_y = self.get_intersection_center(connection, panel, "y")
+            # hit_z = self.get_intersection_center(connection, panel, "z")
         else:
             hit_z = self.get_intersection_center(connection, panel, "z")
 
